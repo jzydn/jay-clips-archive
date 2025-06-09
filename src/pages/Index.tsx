@@ -53,8 +53,8 @@ const Index = () => {
       <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 relative">
         <Particles
           id="tsparticles"
-          init={particlesInit}
-          loaded={particlesLoaded}
+          particlesInit={particlesInit}
+          particlesLoaded={particlesLoaded}
           options={{
             background: {
               color: {
