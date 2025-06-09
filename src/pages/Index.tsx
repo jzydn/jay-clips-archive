@@ -36,11 +36,17 @@ const mockVideos = [
 
 const Index = () => {
   const [isSignedIn, setIsSignedIn] = useState(false);
+  const [username, setUsername] = useState("");
+
+  const handleSignIn = (user: string) => {
+    setIsSignedIn(true);
+    setUsername(user);
+  };
 
   if (!isSignedIn) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 relative font-inter">
-        <Header isSignedIn={isSignedIn} onSignIn={() => setIsSignedIn(true)} />
+        <Header isSignedIn={isSignedIn} onSignIn={handleSignIn} />
         <div className="flex items-center justify-center min-h-[80vh] relative z-10">
           <div className="text-center space-y-8">
             <div className="space-y-4">
@@ -65,12 +71,7 @@ const Index = () => {
                 </div>
               </div>
             </div>
-            <button
-              onClick={() => setIsSignedIn(true)}
-              className="px-8 py-4 bg-white/20 backdrop-blur-md hover:bg-white/30 text-white font-semibold rounded-xl transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl border border-white/30"
-            >
-              View Clips
-            </button>
+            <p className="text-gray-400 text-lg">Please login to view the clips</p>
           </div>
         </div>
       </div>
@@ -79,7 +80,7 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 font-inter">
-      <Header isSignedIn={isSignedIn} onSignIn={() => setIsSignedIn(true)} />
+      <Header isSignedIn={isSignedIn} onSignIn={handleSignIn} username={username} />
       
       <main className="container mx-auto px-6 py-8">
         <div className="mb-8">
