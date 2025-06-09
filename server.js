@@ -1,4 +1,3 @@
-
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
@@ -159,6 +158,61 @@ app.post('/api/videos/upload', upload.single('video'), async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Upload failed: ' + error.message
+    });
+  }
+});
+
+// Delete video endpoint
+app.delete('/api/videos/:videoId', async (req, res) => {
+  try {
+    const videoId = req.params.videoId;
+    const connection = await mysql.createConnection(dbConfig);
+    
+    // First get the video file path
+    const [videos] = await connection.execute(
+      'SELECT file_path FROM videos WHERE id = ?',
+      [videoId]
+    );
+
+    if (videos.length === 0) {
+      await connection.end();
+      return res.status(404).json({
+        success: false,
+        message: 'Video not found'
+      });
+    }
+
+    const video = videos[0];
+    
+    // Delete from database
+    const [result] = await connection.execute(
+      'DELETE FROM videos WHERE id = ?',
+      [videoId]
+    );
+
+    await connection.end();
+
+    // Delete physical file
+    if (video.file_path) {
+      const fullPath = path.join(__dirname, video.file_path);
+      if (fs.existsSync(fullPath)) {
+        fs.unlinkSync(fullPath);
+        console.log('Deleted file:', fullPath);
+      }
+    }
+
+    console.log('Video deleted successfully:', videoId);
+
+    res.json({
+      success: true,
+      message: 'Video deleted successfully'
+    });
+
+  } catch (error) {
+    console.error('Delete error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Delete failed: ' + error.message
     });
   }
 });

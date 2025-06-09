@@ -6,6 +6,7 @@ export const API_CONFIG = {
     UPLOAD_VIDEO: "/videos/upload",
     GET_USER_VIDEOS: "/videos/user",
     GET_VIDEO: "/videos",
+    DELETE_VIDEO: "/videos",
     INCREMENT_VIEWS: "/videos/views",
     AUTH_LOGIN: "/auth/login"
   }

@@ -7,15 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 
 const gameOptions = [
-  "Valorant",
-  "Call of Duty",
-  "Overwatch 2",
-  "Apex Legends",
-  "CS2",
-  "Fortnite",
-  "League of Legends",
-  "Rocket League",
-  "Other"
+  "Roblox"
 ];
 
 // Your VPS API endpoint
@@ -25,7 +17,7 @@ export const UploadPage = () => {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [title, setTitle] = useState("");
   const [subtitle, setSubtitle] = useState("");
-  const [game, setGame] = useState("");
+  const [game, setGame] = useState("Roblox"); // Default to Roblox
   const [duration, setDuration] = useState("");
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);

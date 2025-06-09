@@ -1,8 +1,19 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { ArrowLeft, Share2, Download, Eye, Calendar, Copy, ExternalLink } from "lucide-react";
+import { ArrowLeft, Share2, Download, Eye, Calendar, Copy, ExternalLink, Trash2 } from "lucide-react";
 import { Header } from "@/components/Header";
 import { buildApiUrl } from "@/config/api";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 interface Video {
   id: string | number;
@@ -25,6 +36,7 @@ const VideoPlayer = () => {
   const [video, setVideo] = useState<Video | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   // Fetch video data from MySQL database
   useEffect(() => {
@@ -110,6 +122,32 @@ const VideoPlayer = () => {
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!video) return;
+    
+    setIsDeleting(true);
+    try {
+      const response = await fetch(buildApiUrl('/videos', video.id.toString()), {
+        method: 'DELETE',
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to delete video');
+      }
+
+      const result = await response.json();
+      console.log('Video deleted:', result);
+      
+      // Navigate back to home after successful deletion
+      navigate('/');
+    } catch (error) {
+      console.error('Delete error:', error);
+      alert('Failed to delete video. Please try again.');
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -281,9 +319,45 @@ const VideoPlayer = () => {
                 <button className="w-full text-left px-3 py-2 text-slate-300 hover:bg-slate-800 hover:text-white rounded transition-colors">
                   Update Description
                 </button>
-                <button className="w-full text-left px-3 py-2 text-red-400 hover:bg-slate-800 hover:text-red-300 rounded transition-colors">
-                  Delete Clip
-                </button>
+                
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <button className="w-full text-left px-3 py-2 text-red-400 hover:bg-slate-800 hover:text-red-300 rounded transition-colors">
+                      Delete Clip
+                    </button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent className="bg-slate-800 border-slate-700">
+                    <AlertDialogHeader>
+                      <AlertDialogTitle className="text-white">Are you absolutely sure?</AlertDialogTitle>
+                      <AlertDialogDescription className="text-slate-300">
+                        This action cannot be undone. This will permanently delete your clip
+                        and remove the video file from our servers.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel className="bg-slate-700 border-slate-600 text-white hover:bg-slate-600">
+                        Cancel
+                      </AlertDialogCancel>
+                      <AlertDialogAction
+                        onClick={handleDelete}
+                        disabled={isDeleting}
+                        className="bg-red-600 hover:bg-red-700 text-white"
+                      >
+                        {isDeleting ? (
+                          <>
+                            <Trash2 className="w-4 h-4 mr-2 animate-spin" />
+                            Deleting...
+                          </>
+                        ) : (
+                          <>
+                            <Trash2 className="w-4 h-4 mr-2" />
+                            Delete
+                          </>
+                        )}
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
               </div>
             </div>
           </div>
