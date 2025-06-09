@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { ArrowLeft, Share2, Download, Eye, Calendar, Copy, ExternalLink } from "lucide-react";
@@ -34,20 +33,27 @@ const VideoPlayer = () => {
       
       try {
         setIsLoading(true);
-        const response = await fetch(buildApiUrl('/videos', id));
+        // Fetch all user videos and find the specific one
+        const response = await fetch(buildApiUrl('/videos/user/1'));
         
         if (!response.ok) {
-          throw new Error('Failed to fetch video');
+          throw new Error('Failed to fetch videos');
         }
         
         const data = await response.json();
-        setVideo(data.video);
-        console.log("Fetched video from MySQL:", data.video);
+        const foundVideo = data.videos.find((v: Video) => v.id.toString() === id);
+        
+        if (!foundVideo) {
+          throw new Error('Video not found');
+        }
+        
+        setVideo(foundVideo);
+        console.log("Fetched video from MySQL:", foundVideo);
 
-        // Increment view count
-        await fetch(buildApiUrl('/videos/views', id), {
-          method: 'POST',
-        });
+        // Increment view count (you can create this endpoint later)
+        // await fetch(buildApiUrl('/videos/views', id), {
+        //   method: 'POST',
+        // });
       } catch (error) {
         console.error("Error fetching video:", error);
         setError(error instanceof Error ? error.message : 'Unknown error');
