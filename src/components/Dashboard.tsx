@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Upload, Video, Home, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -9,36 +8,8 @@ interface DashboardProps {
   username: string;
 }
 
-// Mock videos for Jay's clips - replace with real data from MySQL later
-const jayVideos = [
-  {
-    id: "1",
-    title: "Epic Clutch 1v4",
-    thumbnail: "/placeholder.svg",
-    duration: "0:45",
-    uploadDate: "2024-06-08",
-    views: 1234,
-    game: "Valorant"
-  },
-  {
-    id: "2", 
-    title: "Insane Sniper Shot",
-    thumbnail: "/placeholder.svg",
-    duration: "0:12",
-    uploadDate: "2024-06-07",
-    views: 856,
-    game: "Call of Duty"
-  },
-  {
-    id: "3",
-    title: "Perfect Team Coordination",
-    thumbnail: "/placeholder.svg", 
-    duration: "1:23",
-    uploadDate: "2024-06-06",
-    views: 2103,
-    game: "Overwatch 2"
-  }
-];
+// Empty array - replace with real data from MySQL later
+const jayVideos: any[] = [];
 
 export const Dashboard = ({ username }: DashboardProps) => {
   const [activeTab, setActiveTab] = useState<"clips" | "upload">("clips");
