@@ -115,7 +115,7 @@ const VideoPlayer = () => {
 
   const handleDownload = () => {
     if (video?.file_path) {
-      const videoUrl = `http://46.244.96.25:8086${video.file_path}`;
+      const videoUrl = `https://data.extracted.lol${video.file_path}`;
       const link = document.createElement('a');
       link.href = videoUrl;
       link.download = `${video.title}.mp4`;
@@ -192,7 +192,7 @@ const VideoPlayer = () => {
     );
   }
 
-  const videoUrl = `http://46.244.96.25:8086${video.file_path}`;
+  const videoUrl = `https://data.extracted.lol${video.file_path}`;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950">
@@ -214,7 +214,7 @@ const VideoPlayer = () => {
               <video 
                 controls 
                 className="w-full h-full"
-                poster={video.thumbnail_path ? `http://46.244.96.25:8086${video.thumbnail_path}` : undefined}
+                poster={video.thumbnail_path ? `https://data.extracted.lol${video.thumbnail_path}` : undefined}
               >
                 <source src={videoUrl} type="video/mp4" />
                 Your browser does not support the video tag.

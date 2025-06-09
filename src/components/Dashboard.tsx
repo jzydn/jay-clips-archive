@@ -8,8 +8,8 @@ interface DashboardProps {
   username: string;
 }
 
-// Your VPS API endpoint
-const API_BASE_URL = "http://46.244.96.25:8086/api";
+// Updated API endpoint to use NGINX
+const API_BASE_URL = "https://data.extracted.lol/api";
 
 export const Dashboard = ({ username }: DashboardProps) => {
   const [activeTab, setActiveTab] = useState<"clips" | "upload">("clips");

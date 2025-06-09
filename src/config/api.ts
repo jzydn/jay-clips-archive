@@ -1,7 +1,7 @@
 
 // API configuration for your VPS MySQL backend
 export const API_CONFIG = {
-  BASE_URL: "http://46.244.96.25:8086/api",
+  BASE_URL: "https://data.extracted.lol/api",
   ENDPOINTS: {
     UPLOAD_VIDEO: "/videos/upload",
     GET_USER_VIDEOS: "/videos/user",
