@@ -30,7 +30,7 @@ export const VideoCard = ({ video }: VideoCardProps) => {
   // Generate thumbnail from video
   useEffect(() => {
     if (video.file_path) {
-      const videoUrl = `http://46.244.96.25:8086${video.file_path}`;
+      const videoUrl = `https://data.extracted.lol${video.file_path}`;
       
       // Create a temporary video element to capture thumbnail
       const tempVideo = document.createElement('video');
