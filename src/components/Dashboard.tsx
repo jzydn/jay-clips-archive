@@ -9,7 +9,7 @@ interface DashboardProps {
 }
 
 // Your VPS API endpoint
-const API_BASE_URL = "http://46.244.96.25:8082/api";
+const API_BASE_URL = "http://46.244.96.25:8086/api";
 
 export const Dashboard = ({ username }: DashboardProps) => {
   const [activeTab, setActiveTab] = useState<"clips" | "upload">("clips");
