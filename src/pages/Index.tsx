@@ -1,10 +1,9 @@
-
 import { useState, useCallback } from "react";
 import { Header } from "@/components/Header";
 import { VideoCard } from "@/components/VideoCard";
-import Particles from "react-tsparticles";
-import { loadFull } from "tsparticles";
-import type { Container, Engine } from "tsparticles";
+import Particles, { initParticlesEngine } from "@tsparticles/react";
+import { loadBasic } from "@tsparticles/basic";
+import type { Container, Engine } from "@tsparticles/engine";
 
 // Mock data for demonstration - replace with real data later
 const mockVideos = [
@@ -41,7 +40,7 @@ const Index = () => {
   const [isSignedIn, setIsSignedIn] = useState(false);
 
   const particlesInit = useCallback(async (engine: Engine) => {
-    await loadFull(engine);
+    await loadBasic(engine);
   }, []);
 
   const particlesLoaded = useCallback(async (container: Container | undefined) => {
@@ -72,7 +71,9 @@ const Index = () => {
                   enable: true,
                   mode: "repulse",
                 },
-                resize: true,
+                resize: {
+                  enable: true,
+                },
               },
               modes: {
                 push: {
@@ -94,9 +95,6 @@ const Index = () => {
                 enable: true,
                 opacity: 0.3,
                 width: 1,
-              },
-              collisions: {
-                enable: true,
               },
               move: {
                 direction: "none",
