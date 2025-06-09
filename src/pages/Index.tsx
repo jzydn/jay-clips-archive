@@ -39,12 +39,12 @@ const Index = () => {
 
   if (!isSignedIn) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
+      <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950">
         <Header isSignedIn={isSignedIn} onSignIn={() => setIsSignedIn(true)} />
         <div className="flex items-center justify-center min-h-[80vh]">
           <div className="text-center space-y-8">
             <div className="space-y-4">
-              <h1 className="text-6xl font-bold bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text text-transparent">
+              <h1 className="text-6xl font-bold bg-gradient-to-r from-orange-400 to-orange-600 bg-clip-text text-transparent">
                 Jay's Clips
               </h1>
               <p className="text-xl text-slate-300 max-w-md mx-auto">
@@ -53,7 +53,7 @@ const Index = () => {
             </div>
             <button
               onClick={() => setIsSignedIn(true)}
-              className="px-8 py-4 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white font-semibold rounded-xl transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl"
+              className="px-8 py-4 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white font-semibold rounded-xl transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl"
             >
               View Clips
             </button>
@@ -64,7 +64,7 @@ const Index = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
+    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950">
       <Header isSignedIn={isSignedIn} onSignIn={() => setIsSignedIn(true)} />
       
       <main className="container mx-auto px-6 py-8">
@@ -82,7 +82,7 @@ const Index = () => {
         ) : (
           <div className="flex items-center justify-center py-20">
             <div className="text-center space-y-4">
-              <div className="w-24 h-24 mx-auto bg-slate-700 rounded-full flex items-center justify-center">
+              <div className="w-24 h-24 mx-auto bg-slate-800 rounded-full flex items-center justify-center">
                 <svg className="w-12 h-12 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
                 </svg>
