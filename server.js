@@ -72,7 +72,7 @@ app.use(cors({
     /^https:\/\/.*\.lovableproject\.com$/ // Alternative Lovable domains
   ],
   credentials: true,
-  methods: ['GET', 'POST', 'HEAD', 'OPTIONS'],
+  methods: ['GET', 'POST', 'DELETE', 'HEAD', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'Range'],
   exposedHeaders: ['Content-Range', 'Content-Length', 'Accept-Ranges']
 }));
