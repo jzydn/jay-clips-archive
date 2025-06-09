@@ -1,8 +1,10 @@
+
 import { useState, useEffect } from "react";
 import { Upload, Video, Home, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { UploadPage } from "./UploadPage";
 import { VideoCard } from "./VideoCard";
+import { useNavigate } from "react-router-dom";
 
 interface DashboardProps {
   username: string;
@@ -15,6 +17,16 @@ export const Dashboard = ({ username }: DashboardProps) => {
   const [activeTab, setActiveTab] = useState<"clips" | "upload">("clips");
   const [videos, setVideos] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const navigate = useNavigate();
+
+  // Check authentication
+  useEffect(() => {
+    const currentUser = localStorage.getItem('currentUser');
+    if (!currentUser || currentUser !== 'jay') {
+      navigate('/');
+      return;
+    }
+  }, [navigate]);
 
   // Fetch videos from MySQL database
   useEffect(() => {
@@ -42,6 +54,12 @@ export const Dashboard = ({ username }: DashboardProps) => {
       fetchVideos();
     }
   }, [activeTab]);
+
+  // Don't render if not authenticated
+  const currentUser = localStorage.getItem('currentUser');
+  if (!currentUser || currentUser !== 'jay') {
+    return null;
+  }
 
   return (
     <div className="container mx-auto px-6 py-8">
