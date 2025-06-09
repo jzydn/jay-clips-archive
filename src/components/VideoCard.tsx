@@ -17,9 +17,11 @@ interface Video {
 
 interface VideoCardProps {
   video: Video;
+  isAuthenticated?: boolean;
+  username?: string;
 }
 
-export const VideoCard = ({ video }: VideoCardProps) => {
+export const VideoCard = ({ video, isAuthenticated = false, username }: VideoCardProps) => {
   const [isHovered, setIsHovered] = useState(false);
   const [showShareMenu, setShowShareMenu] = useState(false);
   const [thumbnailSrc, setThumbnailSrc] = useState("/placeholder.svg");
@@ -153,43 +155,46 @@ export const VideoCard = ({ video }: VideoCardProps) => {
             {video.title}
           </h3>
           
-          <div className="relative">
-            <button
-              onClick={() => setShowShareMenu(!showShareMenu)}
-              className="p-1 hover:bg-slate-800 rounded transition-colors"
-            >
-              <Share2 className="w-4 h-4 text-slate-400 hover:text-orange-400" />
-            </button>
-            
-            {showShareMenu && (
-              <div className="absolute right-0 top-8 bg-slate-800 border border-slate-700 rounded-lg py-2 z-10 min-w-[140px]">
-                <button
-                  onClick={() => handleShare('copy')}
-                  className="w-full px-3 py-2 text-left text-sm text-slate-300 hover:bg-slate-700 hover:text-white"
-                >
-                  Copy Link
-                </button>
-                <button
-                  onClick={() => handleShare('embed')}
-                  className="w-full px-3 py-2 text-left text-sm text-slate-300 hover:bg-slate-700 hover:text-white"
-                >
-                  Copy Embed Code
-                </button>
-                <button
-                  onClick={() => handleShare('twitter')}
-                  className="w-full px-3 py-2 text-left text-sm text-slate-300 hover:bg-slate-700 hover:text-white"
-                >
-                  Share on X
-                </button>
-                <button
-                  onClick={() => handleShare('discord')}
-                  className="w-full px-3 py-2 text-left text-sm text-slate-300 hover:bg-slate-700 hover:text-white"
-                >
-                  Copy for Discord
-                </button>
-              </div>
-            )}
-          </div>
+          {/* Only show share button for authenticated users */}
+          {isAuthenticated && (
+            <div className="relative">
+              <button
+                onClick={() => setShowShareMenu(!showShareMenu)}
+                className="p-1 hover:bg-slate-800 rounded transition-colors"
+              >
+                <Share2 className="w-4 h-4 text-slate-400 hover:text-orange-400" />
+              </button>
+              
+              {showShareMenu && (
+                <div className="absolute right-0 top-8 bg-slate-800 border border-slate-700 rounded-lg py-2 z-10 min-w-[140px]">
+                  <button
+                    onClick={() => handleShare('copy')}
+                    className="w-full px-3 py-2 text-left text-sm text-slate-300 hover:bg-slate-700 hover:text-white"
+                  >
+                    Copy Link
+                  </button>
+                  <button
+                    onClick={() => handleShare('embed')}
+                    className="w-full px-3 py-2 text-left text-sm text-slate-300 hover:bg-slate-700 hover:text-white"
+                  >
+                    Copy Embed Code
+                  </button>
+                  <button
+                    onClick={() => handleShare('twitter')}
+                    className="w-full px-3 py-2 text-left text-sm text-slate-300 hover:bg-slate-700 hover:text-white"
+                  >
+                    Share on X
+                  </button>
+                  <button
+                    onClick={() => handleShare('discord')}
+                    className="w-full px-3 py-2 text-left text-sm text-slate-300 hover:bg-slate-700 hover:text-white"
+                  >
+                    Copy for Discord
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
         <div className="flex items-center justify-between text-sm text-slate-400">

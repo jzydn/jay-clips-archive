@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Upload, Video, Home, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -94,7 +95,12 @@ export const Dashboard = ({ username }: DashboardProps) => {
           ) : videos.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
               {videos.map((video) => (
-                <VideoCard key={video.id} video={video} />
+                <VideoCard 
+                  key={video.id} 
+                  video={video} 
+                  isAuthenticated={true}
+                  username={username}
+                />
               ))}
             </div>
           ) : (
