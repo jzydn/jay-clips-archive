@@ -1,6 +1,6 @@
 
 import { useState, useRef, useEffect } from "react";
-import { Play, Eye, Calendar, Share2, ExternalLink, Trash2 } from "lucide-react";
+import { Play, Eye, Calendar, Share2, ExternalLink } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 interface Video {
@@ -22,15 +22,10 @@ interface VideoCardProps {
 export const VideoCard = ({ video }: VideoCardProps) => {
   const [isHovered, setIsHovered] = useState(false);
   const [showShareMenu, setShowShareMenu] = useState(false);
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [thumbnailSrc, setThumbnailSrc] = useState("/placeholder.svg");
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const navigate = useNavigate();
-
-  // Check if current user is jay (authenticated)
-  const currentUser = localStorage.getItem('currentUser');
-  const isJay = currentUser === 'jay';
 
   // Generate thumbnail from video
   useEffect(() => {
@@ -93,12 +88,6 @@ export const VideoCard = ({ video }: VideoCardProps) => {
   };
 
   const handleShare = (platform: string) => {
-    // Only allow sharing if user is jay
-    if (!isJay) {
-      alert('Only authenticated users can share videos.');
-      return;
-    }
-
     const url = `${window.location.origin}/video/${video.id}`;
     const embedUrl = `${window.location.origin}/embed/${video.id}`;
     const text = `Check out this clip: ${video.title}`;
@@ -121,30 +110,6 @@ export const VideoCard = ({ video }: VideoCardProps) => {
         break;
     }
     setShowShareMenu(false);
-  };
-
-  const handleDelete = async () => {
-    if (!isJay) {
-      alert('Only jay can delete videos.');
-      return;
-    }
-
-    try {
-      const response = await fetch(`https://data.extracted.lol/api/videos/${video.id}`, {
-        method: 'DELETE',
-      });
-
-      if (response.ok) {
-        alert('Video deleted successfully!');
-        window.location.reload(); // Refresh the page to update the video list
-      } else {
-        alert('Failed to delete video');
-      }
-    } catch (error) {
-      console.error('Error deleting video:', error);
-      alert('Error deleting video');
-    }
-    setShowDeleteConfirm(false);
   };
 
   return (
@@ -188,74 +153,40 @@ export const VideoCard = ({ video }: VideoCardProps) => {
             {video.title}
           </h3>
           
-          <div className="flex items-center gap-1">
-            <div className="relative">
-              <button
-                onClick={() => setShowShareMenu(!showShareMenu)}
-                disabled={!isJay}
-                className={`p-1 rounded transition-colors ${isJay ? 'hover:bg-slate-800' : 'opacity-50 cursor-not-allowed'}`}
-              >
-                <Share2 className={`w-4 h-4 ${isJay ? 'text-slate-400 hover:text-orange-400' : 'text-slate-600'}`} />
-              </button>
-              
-              {showShareMenu && isJay && (
-                <div className="absolute right-0 top-8 bg-slate-800 border border-slate-700 rounded-lg py-2 z-10 min-w-[140px]">
-                  <button
-                    onClick={() => handleShare('copy')}
-                    className="w-full px-3 py-2 text-left text-sm text-slate-300 hover:bg-slate-700 hover:text-white"
-                  >
-                    Copy Link
-                  </button>
-                  <button
-                    onClick={() => handleShare('embed')}
-                    className="w-full px-3 py-2 text-left text-sm text-slate-300 hover:bg-slate-700 hover:text-white"
-                  >
-                    Copy Embed Code
-                  </button>
-                  <button
-                    onClick={() => handleShare('twitter')}
-                    className="w-full px-3 py-2 text-left text-sm text-slate-300 hover:bg-slate-700 hover:text-white"
-                  >
-                    Share on X
-                  </button>
-                  <button
-                    onClick={() => handleShare('discord')}
-                    className="w-full px-3 py-2 text-left text-sm text-slate-300 hover:bg-slate-700 hover:text-white"
-                  >
-                    Copy for Discord
-                  </button>
-                </div>
-              )}
-            </div>
-
-            {isJay && (
-              <div className="relative">
+          <div className="relative">
+            <button
+              onClick={() => setShowShareMenu(!showShareMenu)}
+              className="p-1 hover:bg-slate-800 rounded transition-colors"
+            >
+              <Share2 className="w-4 h-4 text-slate-400 hover:text-orange-400" />
+            </button>
+            
+            {showShareMenu && (
+              <div className="absolute right-0 top-8 bg-slate-800 border border-slate-700 rounded-lg py-2 z-10 min-w-[140px]">
                 <button
-                  onClick={() => setShowDeleteConfirm(true)}
-                  className="p-1 hover:bg-slate-800 rounded transition-colors"
+                  onClick={() => handleShare('copy')}
+                  className="w-full px-3 py-2 text-left text-sm text-slate-300 hover:bg-slate-700 hover:text-white"
                 >
-                  <Trash2 className="w-4 h-4 text-slate-400 hover:text-red-400" />
+                  Copy Link
                 </button>
-                
-                {showDeleteConfirm && (
-                  <div className="absolute right-0 top-8 bg-slate-800 border border-slate-700 rounded-lg p-3 z-10 min-w-[200px]">
-                    <p className="text-sm text-slate-300 mb-3">Delete this video?</p>
-                    <div className="flex gap-2">
-                      <button
-                        onClick={handleDelete}
-                        className="px-3 py-1 bg-red-600 text-white text-sm rounded hover:bg-red-700"
-                      >
-                        Delete
-                      </button>
-                      <button
-                        onClick={() => setShowDeleteConfirm(false)}
-                        className="px-3 py-1 bg-slate-600 text-white text-sm rounded hover:bg-slate-700"
-                      >
-                        Cancel
-                      </button>
-                    </div>
-                  </div>
-                )}
+                <button
+                  onClick={() => handleShare('embed')}
+                  className="w-full px-3 py-2 text-left text-sm text-slate-300 hover:bg-slate-700 hover:text-white"
+                >
+                  Copy Embed Code
+                </button>
+                <button
+                  onClick={() => handleShare('twitter')}
+                  className="w-full px-3 py-2 text-left text-sm text-slate-300 hover:bg-slate-700 hover:text-white"
+                >
+                  Share on X
+                </button>
+                <button
+                  onClick={() => handleShare('discord')}
+                  className="w-full px-3 py-2 text-left text-sm text-slate-300 hover:bg-slate-700 hover:text-white"
+                >
+                  Copy for Discord
+                </button>
               </div>
             )}
           </div>
