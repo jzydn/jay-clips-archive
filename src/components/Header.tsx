@@ -15,7 +15,7 @@ export const Header = ({ isSignedIn, onSignIn }: HeaderProps) => {
       <div className="container mx-auto px-6 py-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-4">
-            <h1 className="text-2xl font-bold bg-gradient-to-r from-orange-400 to-orange-600 bg-clip-text text-transparent">
+            <h1 className="text-2xl font-bold bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent">
               netsink's personal gallery
             </h1>
           </div>
@@ -25,15 +25,15 @@ export const Header = ({ isSignedIn, onSignIn }: HeaderProps) => {
               <>
                 <button
                   onClick={() => setShowUpload(!showUpload)}
-                  className="flex items-center space-x-2 px-4 py-2 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white rounded-lg transition-all duration-300 transform hover:scale-105"
+                  className="flex items-center space-x-2 px-4 py-2 bg-white hover:bg-gray-100 text-black rounded-lg transition-all duration-300 transform hover:scale-105"
                 >
                   <Upload size={18} />
                   <span>Upload</span>
                 </button>
                 
                 <div className="flex items-center space-x-2 px-4 py-2 bg-slate-800 rounded-lg">
-                  <User size={18} className="text-slate-300" />
-                  <span className="text-slate-300">Jay</span>
+                  <User size={18} className="text-gray-300" />
+                  <span className="text-gray-300">Jay</span>
                 </div>
               </>
             )}
@@ -43,10 +43,10 @@ export const Header = ({ isSignedIn, onSignIn }: HeaderProps) => {
         {showUpload && isSignedIn && (
           <div className="mt-4 p-4 bg-slate-900 rounded-lg border border-slate-700">
             <div className="text-center space-y-4">
-              <div className="border-2 border-dashed border-slate-600 rounded-lg p-8 hover:border-orange-500 transition-colors cursor-pointer">
-                <Upload className="w-12 h-12 text-slate-400 mx-auto mb-4" />
-                <p className="text-slate-300 mb-2">Drop your video files here or click to browse</p>
-                <p className="text-sm text-slate-500">Supports MP4, MOV, AVI (Max 100MB)</p>
+              <div className="border-2 border-dashed border-slate-600 rounded-lg p-8 hover:border-white transition-colors cursor-pointer">
+                <Upload className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                <p className="text-gray-300 mb-2">Drop your video files here or click to browse</p>
+                <p className="text-sm text-gray-500">Supports MP4, MOV, AVI (Max 100MB)</p>
               </div>
             </div>
           </div>
