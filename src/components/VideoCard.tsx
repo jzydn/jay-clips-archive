@@ -39,17 +39,24 @@ export const VideoCard = ({ video }: VideoCardProps) => {
 
   const handleShare = (platform: string) => {
     const url = `${window.location.origin}/video/${video.id}`;
+    const embedUrl = `${window.location.origin}/embed/${video.id}`;
     const text = `Check out this clip: ${video.title}`;
     
     switch (platform) {
       case 'copy':
         navigator.clipboard.writeText(url);
+        alert('Link copied to clipboard!');
+        break;
+      case 'embed':
+        navigator.clipboard.writeText(`<iframe src="${embedUrl}" width="560" height="315" frameborder="0" allowfullscreen></iframe>`);
+        alert('Embed code copied to clipboard!');
         break;
       case 'twitter':
         window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`);
         break;
       case 'discord':
         navigator.clipboard.writeText(`${text} ${url}`);
+        alert('Message copied for Discord!');
         break;
     }
     setShowShareMenu(false);
@@ -104,12 +111,18 @@ export const VideoCard = ({ video }: VideoCardProps) => {
             </button>
             
             {showShareMenu && (
-              <div className="absolute right-0 top-8 bg-slate-800 border border-slate-700 rounded-lg py-2 z-10 min-w-[120px]">
+              <div className="absolute right-0 top-8 bg-slate-800 border border-slate-700 rounded-lg py-2 z-10 min-w-[140px]">
                 <button
                   onClick={() => handleShare('copy')}
                   className="w-full px-3 py-2 text-left text-sm text-slate-300 hover:bg-slate-700 hover:text-white"
                 >
                   Copy Link
+                </button>
+                <button
+                  onClick={() => handleShare('embed')}
+                  className="w-full px-3 py-2 text-left text-sm text-slate-300 hover:bg-slate-700 hover:text-white"
+                >
+                  Copy Embed Code
                 </button>
                 <button
                   onClick={() => handleShare('twitter')}
