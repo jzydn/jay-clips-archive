@@ -16,7 +16,7 @@ export const Header = ({ isSignedIn, onSignIn }: HeaderProps) => {
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-4">
             <h1 className="text-2xl font-bold bg-gradient-to-r from-orange-400 to-orange-600 bg-clip-text text-transparent">
-              Jay's Clips
+              netsink's personal gallery
             </h1>
           </div>
 
