@@ -1,28 +1,63 @@
-import { useState } from "react";
+
+import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { ArrowLeft, Share2, Download, Eye, Calendar, Copy, ExternalLink } from "lucide-react";
 import { Header } from "@/components/Header";
+import { buildApiUrl } from "@/config/api";
 
-// Mock video data - replace with real data later
-const mockVideo = {
-  id: "1",
-  title: "Epic Clutch 1v4",
-  videoUrl: "/placeholder.svg", // This would be the actual video file
-  thumbnail: "/placeholder.svg",
-  description: "Insane 1v4 clutch in Valorant ranked game. Had to make some crazy plays to secure this round!",
-  duration: "0:45",
-  uploadDate: "2024-06-08",
-  views: 1234,
-  game: "Valorant",
-  map: "Bind",
-  rank: "Immortal 2"
-};
+interface Video {
+  id: string | number;
+  title: string;
+  subtitle?: string;
+  game: string;
+  duration: string;
+  file_path: string;
+  thumbnail_path?: string;
+  upload_date: string;
+  views: number;
+  share_token?: string;
+}
 
 const VideoPlayer = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const [showShareMenu, setShowShareMenu] = useState(false);
   const [isSignedIn] = useState(true); // For this demo
+  const [video, setVideo] = useState<Video | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  // Fetch video data from MySQL database
+  useEffect(() => {
+    const fetchVideo = async () => {
+      if (!id) return;
+      
+      try {
+        setIsLoading(true);
+        const response = await fetch(buildApiUrl('/videos', id));
+        
+        if (!response.ok) {
+          throw new Error('Failed to fetch video');
+        }
+        
+        const data = await response.json();
+        setVideo(data.video);
+        console.log("Fetched video from MySQL:", data.video);
+
+        // Increment view count
+        await fetch(buildApiUrl('/videos/views', id), {
+          method: 'POST',
+        });
+      } catch (error) {
+        console.error("Error fetching video:", error);
+        setError(error instanceof Error ? error.message : 'Unknown error');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchVideo();
+  }, [id]);
 
   const formatViews = (views: number) => {
     if (views >= 1000) {
@@ -42,7 +77,7 @@ const VideoPlayer = () => {
 
   const handleShare = (platform: string) => {
     const url = window.location.href;
-    const text = `Check out this clip: ${mockVideo.title}`;
+    const text = `Check out this clip: ${video?.title}`;
     
     switch (platform) {
       case 'copy':
@@ -59,6 +94,61 @@ const VideoPlayer = () => {
     }
     setShowShareMenu(false);
   };
+
+  const handleDownload = () => {
+    if (video?.file_path) {
+      const videoUrl = `http://46.244.96.25:8086${video.file_path}`;
+      const link = document.createElement('a');
+      link.href = videoUrl;
+      link.download = `${video.title}.mp4`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950">
+        <Header isSignedIn={isSignedIn} onSignIn={() => {}} />
+        <main className="container mx-auto px-6 py-8">
+          <div className="flex items-center justify-center py-20">
+            <div className="text-center space-y-4">
+              <div className="w-24 h-24 mx-auto bg-slate-800 rounded-full flex items-center justify-center animate-pulse">
+                <Eye className="w-12 h-12 text-gray-500" />
+              </div>
+              <h3 className="text-xl font-semibold text-gray-300">Loading video...</h3>
+            </div>
+          </div>
+        </main>
+      </div>
+    );
+  }
+
+  if (error || !video) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950">
+        <Header isSignedIn={isSignedIn} onSignIn={() => {}} />
+        <main className="container mx-auto px-6 py-8">
+          <button
+            onClick={() => navigate('/')}
+            className="flex items-center space-x-2 text-slate-400 hover:text-orange-400 transition-colors mb-6"
+          >
+            <ArrowLeft className="w-5 h-5" />
+            <span>Back to clips</span>
+          </button>
+          <div className="flex items-center justify-center py-20">
+            <div className="text-center space-y-4">
+              <h3 className="text-xl font-semibold text-red-400">Video not found</h3>
+              <p className="text-gray-500">{error || 'The video you\'re looking for doesn\'t exist.'}</p>
+            </div>
+          </div>
+        </main>
+      </div>
+    );
+  }
+
+  const videoUrl = `http://46.244.96.25:8086${video.file_path}`;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950">
@@ -77,23 +167,20 @@ const VideoPlayer = () => {
           <div className="lg:col-span-3 space-y-6">
             {/* Video Player */}
             <div className="aspect-video bg-slate-900 rounded-xl overflow-hidden border border-slate-800">
-              <div className="w-full h-full bg-slate-800 flex items-center justify-center">
-                <div className="text-center space-y-4">
-                  <div className="w-20 h-20 mx-auto bg-slate-700 rounded-full flex items-center justify-center">
-                    <svg className="w-10 h-10 text-orange-400" fill="currentColor" viewBox="0 0 24 24">
-                      <path d="M8 5v14l11-7z"/>
-                    </svg>
-                  </div>
-                  <p className="text-slate-400">Video Player Placeholder</p>
-                  <p className="text-sm text-slate-500">In production, this would show the actual video</p>
-                </div>
-              </div>
+              <video 
+                controls 
+                className="w-full h-full"
+                poster={video.thumbnail_path ? `http://46.244.96.25:8086${video.thumbnail_path}` : undefined}
+              >
+                <source src={videoUrl} type="video/mp4" />
+                Your browser does not support the video tag.
+              </video>
             </div>
 
             {/* Video Info */}
             <div className="bg-slate-900 rounded-xl p-6 border border-slate-800">
               <div className="flex items-start justify-between mb-4">
-                <h1 className="text-2xl font-bold text-white">{mockVideo.title}</h1>
+                <h1 className="text-2xl font-bold text-white">{video.title}</h1>
                 
                 <div className="flex items-center space-x-2">
                   <div className="relative">
@@ -132,7 +219,10 @@ const VideoPlayer = () => {
                     )}
                   </div>
                   
-                  <button className="flex items-center space-x-2 px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded-lg transition-colors">
+                  <button 
+                    onClick={handleDownload}
+                    className="flex items-center space-x-2 px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded-lg transition-colors"
+                  >
                     <Download className="w-4 h-4" />
                     <span>Download</span>
                   </button>
@@ -142,16 +232,18 @@ const VideoPlayer = () => {
               <div className="flex items-center space-x-6 text-sm text-slate-400 mb-4">
                 <div className="flex items-center space-x-1">
                   <Eye className="w-4 h-4" />
-                  <span>{formatViews(mockVideo.views)} views</span>
+                  <span>{formatViews(video.views)} views</span>
                 </div>
                 
                 <div className="flex items-center space-x-1">
                   <Calendar className="w-4 h-4" />
-                  <span>{formatDate(mockVideo.uploadDate)}</span>
+                  <span>{formatDate(video.upload_date)}</span>
                 </div>
               </div>
 
-              <p className="text-slate-300 leading-relaxed">{mockVideo.description}</p>
+              {video.subtitle && (
+                <p className="text-slate-300 leading-relaxed">{video.subtitle}</p>
+              )}
             </div>
           </div>
 
@@ -163,22 +255,12 @@ const VideoPlayer = () => {
               <div className="space-y-3">
                 <div className="flex justify-between">
                   <span className="text-slate-400">Game</span>
-                  <span className="text-white">{mockVideo.game}</span>
-                </div>
-                
-                <div className="flex justify-between">
-                  <span className="text-slate-400">Map</span>
-                  <span className="text-white">{mockVideo.map}</span>
-                </div>
-                
-                <div className="flex justify-between">
-                  <span className="text-slate-400">Rank</span>
-                  <span className="text-white">{mockVideo.rank}</span>
+                  <span className="text-white">{video.game}</span>
                 </div>
                 
                 <div className="flex justify-between">
                   <span className="text-slate-400">Duration</span>
-                  <span className="text-white">{mockVideo.duration}</span>
+                  <span className="text-white">{video.duration}</span>
                 </div>
               </div>
             </div>
