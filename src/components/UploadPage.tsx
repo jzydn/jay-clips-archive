@@ -1,3 +1,4 @@
+
 import { useState, useRef } from "react";
 import { Upload, Video, Clock, Gamepad2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -10,8 +11,8 @@ const gameOptions = [
   "Roblox"
 ];
 
-// Your VPS API endpoint
-const API_BASE_URL = "http://46.244.96.25:8086/api";
+// Updated to use HTTPS NGINX endpoint
+const API_BASE_URL = "https://data.extracted.lol/api";
 
 export const UploadPage = () => {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -66,7 +67,7 @@ export const UploadPage = () => {
         apiUrl: `${API_BASE_URL}/videos/upload`
       });
 
-      // Upload to your MySQL backend
+      // Upload to your MySQL backend using HTTPS
       const response = await fetch(`${API_BASE_URL}/videos/upload`, {
         method: 'POST',
         body: formData,
