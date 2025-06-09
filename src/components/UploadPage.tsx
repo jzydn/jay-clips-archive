@@ -1,4 +1,3 @@
-
 import { useState, useRef } from "react";
 import { Upload, Video, Clock, Gamepad2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -20,7 +19,7 @@ const gameOptions = [
 ];
 
 // Your VPS API endpoint
-const API_BASE_URL = "http://46.244.96.25:8081/api";
+const API_BASE_URL = "http://46.244.96.25:8082/api";
 
 export const UploadPage = () => {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
