@@ -1,4 +1,3 @@
-
 import { useState, useRef } from "react";
 import { Upload, Video, Clock, Gamepad2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -131,7 +130,7 @@ export const UploadPage = () => {
                 <div className="space-y-2">
                   <Upload className="w-12 h-12 text-gray-400 mx-auto" />
                   <p className="text-gray-300">Drop your video file here or click to browse</p>
-                  <p className="text-sm text-gray-500">Supports MP4, MOV, AVI (Max 100MB)</p>
+                  <p className="text-sm text-gray-500">Supports MP4, MOV, AVI, MKV, WEBM (No size limit)</p>
                 </div>
               )}
             </div>
