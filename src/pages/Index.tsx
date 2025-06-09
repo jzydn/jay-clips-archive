@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Header } from "@/components/Header";
 import { Dashboard } from "@/components/Dashboard";
 
@@ -7,9 +7,26 @@ const Index = () => {
   const [isSignedIn, setIsSignedIn] = useState(false);
   const [username, setUsername] = useState("");
 
+  // Check for stored login on component mount
+  useEffect(() => {
+    const storedUser = localStorage.getItem('loggedInUser');
+    if (storedUser) {
+      setIsSignedIn(true);
+      setUsername(storedUser);
+    }
+  }, []);
+
   const handleSignIn = (user: string) => {
     setIsSignedIn(true);
     setUsername(user);
+    // Store login in localStorage for persistence
+    localStorage.setItem('loggedInUser', user);
+  };
+
+  const handleSignOut = () => {
+    setIsSignedIn(false);
+    setUsername("");
+    localStorage.removeItem('loggedInUser');
   };
 
   if (!isSignedIn) {
@@ -49,7 +66,7 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 font-inter">
-      <Header isSignedIn={isSignedIn} onSignIn={handleSignIn} username={username} />
+      <Header isSignedIn={isSignedIn} onSignIn={handleSignIn} username={username} onSignOut={handleSignOut} />
       <Dashboard username={username} />
     </div>
   );

@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Play, Eye, Calendar, Share2, ExternalLink } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
@@ -22,7 +22,55 @@ interface VideoCardProps {
 export const VideoCard = ({ video }: VideoCardProps) => {
   const [isHovered, setIsHovered] = useState(false);
   const [showShareMenu, setShowShareMenu] = useState(false);
+  const [thumbnailSrc, setThumbnailSrc] = useState("/placeholder.svg");
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
   const navigate = useNavigate();
+
+  // Generate thumbnail from video
+  useEffect(() => {
+    if (video.file_path) {
+      const videoUrl = `http://46.244.96.25:8086${video.file_path}`;
+      
+      // Create a temporary video element to capture thumbnail
+      const tempVideo = document.createElement('video');
+      tempVideo.src = videoUrl;
+      tempVideo.crossOrigin = 'anonymous';
+      tempVideo.currentTime = 1; // Capture frame at 1 second
+
+      tempVideo.onloadeddata = () => {
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        
+        if (ctx) {
+          canvas.width = tempVideo.videoWidth;
+          canvas.height = tempVideo.videoHeight;
+          
+          ctx.drawImage(tempVideo, 0, 0, canvas.width, canvas.height);
+          
+          // Convert canvas to blob and create URL
+          canvas.toBlob((blob) => {
+            if (blob) {
+              const thumbnailUrl = URL.createObjectURL(blob);
+              setThumbnailSrc(thumbnailUrl);
+            }
+          }, 'image/jpeg', 0.8);
+        }
+      };
+
+      tempVideo.onerror = () => {
+        // Fallback to placeholder if video can't be loaded
+        setThumbnailSrc("/placeholder.svg");
+      };
+
+      // Clean up function
+      return () => {
+        if (thumbnailSrc.startsWith('blob:')) {
+          URL.revokeObjectURL(thumbnailSrc);
+        }
+      };
+    }
+  }, [video.file_path]);
 
   const formatViews = (views: number) => {
     if (views >= 1000) {
@@ -64,9 +112,6 @@ export const VideoCard = ({ video }: VideoCardProps) => {
     setShowShareMenu(false);
   };
 
-  // Use thumbnail_path from MySQL or fallback to placeholder
-  const thumbnailSrc = video.thumbnail_path || "/placeholder.svg";
-
   return (
     <div 
       className="bg-slate-900 rounded-xl overflow-hidden border border-slate-800 hover:border-orange-500/50 transition-all duration-300 transform hover:scale-[1.02] hover:shadow-xl hover:shadow-orange-500/10 group"
@@ -74,13 +119,14 @@ export const VideoCard = ({ video }: VideoCardProps) => {
       onMouseLeave={() => setIsHovered(false)}
     >
       <div 
-        className="relative aspect-video bg-slate-800 cursor-pointer"
+        className="relative aspect-video bg-slate-800 cursor-pointer overflow-hidden"
         onClick={() => navigate(`/video/${video.id}`)}
       >
         <img 
           src={thumbnailSrc} 
           alt={video.title}
           className="w-full h-full object-cover"
+          onError={() => setThumbnailSrc("/placeholder.svg")}
         />
         
         <div className="absolute inset-0 bg-black/20 group-hover:bg-black/40 transition-all duration-300" />
@@ -162,6 +208,10 @@ export const VideoCard = ({ video }: VideoCardProps) => {
           </div>
         </div>
       </div>
+
+      {/* Hidden elements for thumbnail generation */}
+      <video ref={videoRef} style={{ display: 'none' }} />
+      <canvas ref={canvasRef} style={{ display: 'none' }} />
     </div>
   );
 };

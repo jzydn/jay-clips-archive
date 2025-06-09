@@ -1,22 +1,25 @@
 
 import { useState } from "react";
-import { Upload, User, LogIn, X } from "lucide-react";
+import { Upload, User, LogIn, X, LayoutDashboard, LogOut } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { useNavigate } from "react-router-dom";
 
 interface HeaderProps {
   isSignedIn: boolean;
   onSignIn: (username: string) => void;
   username?: string;
+  onSignOut?: () => void;
 }
 
-export const Header = ({ isSignedIn, onSignIn, username }: HeaderProps) => {
+export const Header = ({ isSignedIn, onSignIn, username, onSignOut }: HeaderProps) => {
   const [showUpload, setShowUpload] = useState(false);
   const [showLogin, setShowLogin] = useState(false);
   const [loginForm, setLoginForm] = useState({ username: "", password: "" });
   const [loginError, setLoginError] = useState("");
+  const navigate = useNavigate();
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
@@ -27,6 +30,16 @@ export const Header = ({ isSignedIn, onSignIn, username }: HeaderProps) => {
       setLoginError("");
     } else {
       setLoginError("Invalid credentials");
+    }
+  };
+
+  const handleDashboard = () => {
+    navigate("/");
+  };
+
+  const handleSignOut = () => {
+    if (onSignOut) {
+      onSignOut();
     }
   };
 
@@ -44,6 +57,14 @@ export const Header = ({ isSignedIn, onSignIn, username }: HeaderProps) => {
             {isSignedIn ? (
               <>
                 <button
+                  onClick={handleDashboard}
+                  className="flex items-center space-x-2 px-4 py-2 bg-white/20 backdrop-blur-md hover:bg-white/30 text-white rounded-lg transition-all duration-300 transform hover:scale-105 border border-white/30"
+                >
+                  <LayoutDashboard size={18} />
+                  <span>Dashboard</span>
+                </button>
+
+                <button
                   onClick={() => setShowUpload(!showUpload)}
                   className="flex items-center space-x-2 px-4 py-2 bg-white/20 backdrop-blur-md hover:bg-white/30 text-white rounded-lg transition-all duration-300 transform hover:scale-105 border border-white/30"
                 >
@@ -55,6 +76,14 @@ export const Header = ({ isSignedIn, onSignIn, username }: HeaderProps) => {
                   <User size={18} className="text-gray-300" />
                   <span className="text-gray-300">{username}</span>
                 </div>
+
+                <button
+                  onClick={handleSignOut}
+                  className="flex items-center space-x-2 px-4 py-2 bg-red-500/20 backdrop-blur-md hover:bg-red-500/30 text-white rounded-lg transition-all duration-300 transform hover:scale-105 border border-red-500/30"
+                >
+                  <LogOut size={18} />
+                  <span>Sign Out</span>
+                </button>
               </>
             ) : (
               <Dialog open={showLogin} onOpenChange={setShowLogin}>
