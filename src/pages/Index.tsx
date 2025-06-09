@@ -1,10 +1,7 @@
 
-import { useState, useCallback } from "react";
+import { useState } from "react";
 import { Header } from "@/components/Header";
 import { VideoCard } from "@/components/VideoCard";
-import Particles, { initParticlesEngine } from "@tsparticles/react";
-import { loadBasic } from "@tsparticles/basic";
-import type { Container, Engine } from "@tsparticles/engine";
 
 // Mock data for demonstration - replace with real data later
 const mockVideos = [
@@ -40,93 +37,9 @@ const mockVideos = [
 const Index = () => {
   const [isSignedIn, setIsSignedIn] = useState(false);
 
-  const particlesInit = useCallback(async (engine: Engine) => {
-    await loadBasic(engine);
-  }, []);
-
-  const particlesLoaded = useCallback(async (container: Container | undefined) => {
-    console.log(container);
-  }, []);
-
   if (!isSignedIn) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 relative">
-        <Particles
-          id="tsparticles"
-          particlesInit={particlesInit}
-          particlesLoaded={particlesLoaded}
-          options={{
-            background: {
-              color: {
-                value: "transparent",
-              },
-            },
-            fpsLimit: 120,
-            interactivity: {
-              events: {
-                onClick: {
-                  enable: true,
-                  mode: "push",
-                },
-                onHover: {
-                  enable: true,
-                  mode: "repulse",
-                },
-                resize: {
-                  enable: true,
-                },
-              },
-              modes: {
-                push: {
-                  quantity: 4,
-                },
-                repulse: {
-                  distance: 200,
-                  duration: 0.4,
-                },
-              },
-            },
-            particles: {
-              color: {
-                value: "#ffffff",
-              },
-              links: {
-                color: "#ffffff",
-                distance: 150,
-                enable: true,
-                opacity: 0.2,
-                width: 1,
-              },
-              move: {
-                direction: "none",
-                enable: true,
-                outModes: {
-                  default: "bounce",
-                },
-                random: false,
-                speed: 1,
-                straight: false,
-              },
-              number: {
-                density: {
-                  enable: true,
-                },
-                value: 80,
-              },
-              opacity: {
-                value: 0.3,
-              },
-              shape: {
-                type: "circle",
-              },
-              size: {
-                value: { min: 1, max: 5 },
-              },
-            },
-            detectRetina: true,
-          }}
-          className="absolute inset-0 z-0"
-        />
         <Header isSignedIn={isSignedIn} onSignIn={() => setIsSignedIn(true)} />
         <div className="flex items-center justify-center min-h-[80vh] relative z-10">
           <div className="text-center space-y-8">
