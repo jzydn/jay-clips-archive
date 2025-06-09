@@ -39,15 +39,15 @@ const Index = () => {
 
   if (!isSignedIn) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 relative">
+      <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 relative font-inter">
         <Header isSignedIn={isSignedIn} onSignIn={() => setIsSignedIn(true)} />
         <div className="flex items-center justify-center min-h-[80vh] relative z-10">
           <div className="text-center space-y-8">
             <div className="space-y-4">
-              <h1 className="text-6xl font-bold bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent">
+              <h1 className="text-6xl font-bold bg-gradient-to-r from-white via-cyan-200 to-blue-200 bg-clip-text text-transparent drop-shadow-lg">
                 netsink's personal gallery
               </h1>
-              <p className="text-xl text-gray-400 max-w-md mx-auto">
+              <p className="text-xl bg-gradient-to-r from-slate-200 to-slate-400 bg-clip-text text-transparent max-w-md mx-auto">
                 netsink's clips
               </p>
               <div className="flex items-center justify-center space-x-4 mt-6">
@@ -78,13 +78,15 @@ const Index = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950">
+    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 font-inter">
       <Header isSignedIn={isSignedIn} onSignIn={() => setIsSignedIn(true)} />
       
       <main className="container mx-auto px-6 py-8">
         <div className="mb-8">
-          <h1 className="text-4xl font-bold text-white mb-2">netsink's personal gallery</h1>
-          <p className="text-gray-400">netsink's clips</p>
+          <h1 className="text-4xl font-bold bg-gradient-to-r from-white via-cyan-200 to-blue-200 bg-clip-text text-transparent drop-shadow-lg mb-2">
+            netsink's personal gallery
+          </h1>
+          <p className="bg-gradient-to-r from-slate-200 to-slate-400 bg-clip-text text-transparent">netsink's clips</p>
         </div>
 
         {mockVideos.length > 0 ? (
