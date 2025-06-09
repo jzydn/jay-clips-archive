@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { ArrowLeft, Share2, Download, Eye, Calendar, Copy, ExternalLink, Trash2 } from "lucide-react";
@@ -49,6 +48,67 @@ const VideoPlayer = () => {
       setUsername(storedUser);
     }
   }, []);
+
+  // Update meta tags for video embedding
+  useEffect(() => {
+    if (video) {
+      const videoUrl = `https://data.extracted.lol${video.file_path}`;
+      const thumbnailUrl = video.thumbnail_path ? `https://data.extracted.lol${video.thumbnail_path}` : '';
+      const pageUrl = window.location.href;
+
+      // Update document title
+      document.title = `${video.title} - Gaming Clips`;
+
+      // Remove existing meta tags
+      const existingMetas = document.querySelectorAll('meta[property^="og:"], meta[name="twitter:"], meta[property="video:"]');
+      existingMetas.forEach(meta => meta.remove());
+
+      // Create and append new meta tags
+      const metaTags = [
+        // Open Graph tags
+        { property: 'og:title', content: video.title },
+        { property: 'og:description', content: video.subtitle || `${video.game} gameplay clip - ${video.duration}` },
+        { property: 'og:type', content: 'video.other' },
+        { property: 'og:url', content: pageUrl },
+        { property: 'og:video', content: videoUrl },
+        { property: 'og:video:secure_url', content: videoUrl },
+        { property: 'og:video:type', content: 'video/mp4' },
+        { property: 'og:video:width', content: '1280' },
+        { property: 'og:video:height', content: '720' },
+        ...(thumbnailUrl ? [
+          { property: 'og:image', content: thumbnailUrl },
+          { property: 'og:image:width', content: '1280' },
+          { property: 'og:image:height', content: '720' }
+        ] : []),
+        
+        // Twitter Card tags
+        { name: 'twitter:card', content: 'player' },
+        { name: 'twitter:title', content: video.title },
+        { name: 'twitter:description', content: video.subtitle || `${video.game} gameplay clip` },
+        { name: 'twitter:player', content: videoUrl },
+        { name: 'twitter:player:width', content: '1280' },
+        { name: 'twitter:player:height', content: '720' },
+        ...(thumbnailUrl ? [{ name: 'twitter:image', content: thumbnailUrl }] : []),
+
+        // Video-specific meta tags
+        { property: 'video:duration', content: video.duration },
+        { property: 'video:tag', content: video.game }
+      ];
+
+      metaTags.forEach(({ property, name, content }) => {
+        const meta = document.createElement('meta');
+        if (property) meta.setAttribute('property', property);
+        if (name) meta.setAttribute('name', name);
+        meta.setAttribute('content', content);
+        document.head.appendChild(meta);
+      });
+    }
+
+    // Cleanup function to restore default title
+    return () => {
+      document.title = 'Gaming Clips';
+    };
+  }, [video]);
 
   // Fetch video data from MySQL database
   useEffect(() => {
