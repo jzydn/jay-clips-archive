@@ -19,6 +19,9 @@ const gameOptions = [
   "Other"
 ];
 
+// Your VPS API endpoint
+const API_BASE_URL = "http://46.244.96.25:3001/api";
+
 export const UploadPage = () => {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [title, setTitle] = useState("");
@@ -54,26 +57,38 @@ export const UploadPage = () => {
     setIsUploading(true);
     
     try {
-      // TODO: Replace with actual MySQL upload logic
-      console.log("Uploading to MySQL:", {
+      // Create FormData for file upload
+      const formData = new FormData();
+      formData.append('video', selectedFile);
+      formData.append('title', title);
+      formData.append('subtitle', subtitle);
+      formData.append('game', game);
+      formData.append('duration', duration);
+      formData.append('userId', '1'); // Hardcoded for Jay for now
+
+      console.log("Uploading to MySQL backend:", {
         file: selectedFile.name,
         title,
         subtitle,
         game,
         duration,
-        // MySQL connection details (placeholder)
-        mysql: {
-          host: "", // Will be provided later
-          user: "", // Will be provided later
-          password: "", // Will be provided later
-          database: "" // Will be provided later
-        }
+        apiUrl: `${API_BASE_URL}/videos/upload`
       });
 
-      // Simulate upload delay
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      // Upload to your MySQL backend
+      const response = await fetch(`${API_BASE_URL}/videos/upload`, {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        throw new Error(`Upload failed: ${response.statusText}`);
+      }
+
+      const result = await response.json();
+      console.log("Upload successful:", result);
       
-      alert("Video uploaded successfully!");
+      alert("Video uploaded successfully to MySQL database!");
       
       // Reset form
       setSelectedFile(null);
@@ -86,7 +101,7 @@ export const UploadPage = () => {
       }
     } catch (error) {
       console.error("Upload failed:", error);
-      alert("Upload failed. Please try again.");
+      alert(`Upload failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
     } finally {
       setIsUploading(false);
     }
@@ -189,7 +204,7 @@ export const UploadPage = () => {
           {isUploading ? (
             <>
               <Upload className="w-4 h-4 mr-2 animate-spin" />
-              Uploading...
+              Uploading to MySQL...
             </>
           ) : (
             <>

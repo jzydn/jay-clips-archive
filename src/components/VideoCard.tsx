@@ -4,13 +4,15 @@ import { Play, Eye, Calendar, Share2, ExternalLink } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 interface Video {
-  id: string;
+  id: string | number;
   title: string;
-  thumbnail: string;
+  thumbnail_path?: string;
   duration: string;
-  uploadDate: string;
+  upload_date: string;
   views: number;
   game: string;
+  file_path?: string;
+  share_token?: string;
 }
 
 interface VideoCardProps {
@@ -62,6 +64,9 @@ export const VideoCard = ({ video }: VideoCardProps) => {
     setShowShareMenu(false);
   };
 
+  // Use thumbnail_path from MySQL or fallback to placeholder
+  const thumbnailSrc = video.thumbnail_path || "/placeholder.svg";
+
   return (
     <div 
       className="bg-slate-900 rounded-xl overflow-hidden border border-slate-800 hover:border-orange-500/50 transition-all duration-300 transform hover:scale-[1.02] hover:shadow-xl hover:shadow-orange-500/10 group"
@@ -73,7 +78,7 @@ export const VideoCard = ({ video }: VideoCardProps) => {
         onClick={() => navigate(`/video/${video.id}`)}
       >
         <img 
-          src={video.thumbnail} 
+          src={thumbnailSrc} 
           alt={video.title}
           className="w-full h-full object-cover"
         />
@@ -152,7 +157,7 @@ export const VideoCard = ({ video }: VideoCardProps) => {
             
             <div className="flex items-center space-x-1">
               <Calendar className="w-3 h-3" />
-              <span>{formatDate(video.uploadDate)}</span>
+              <span>{formatDate(video.upload_date)}</span>
             </div>
           </div>
         </div>
