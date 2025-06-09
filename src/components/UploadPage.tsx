@@ -20,7 +20,7 @@ const gameOptions = [
 ];
 
 // Your VPS API endpoint
-const API_BASE_URL = "http://46.244.96.25:3001/api";
+const API_BASE_URL = "http://46.244.96.25:8081/api";
 
 export const UploadPage = () => {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);

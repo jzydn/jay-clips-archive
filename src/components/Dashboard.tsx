@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Upload, Video, Home, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -10,7 +9,7 @@ interface DashboardProps {
 }
 
 // Your VPS API endpoint
-const API_BASE_URL = "http://46.244.96.25:3001/api";
+const API_BASE_URL = "http://46.244.96.25:8081/api";
 
 export const Dashboard = ({ username }: DashboardProps) => {
   const [activeTab, setActiveTab] = useState<"clips" | "upload">("clips");
