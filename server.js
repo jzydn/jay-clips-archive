@@ -1,4 +1,3 @@
-
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
@@ -63,8 +62,8 @@ app.use(helmet({
 const allowedDomains = [
   'http://localhost:5173', 
   'http://localhost:3000', 
-  'http://localhost:8081', 
-  'http://46.244.96.25:8081',
+  'http://localhost:8080', 
+  'http://46.244.96.25:8080',
   'https://vids.extracted.lol',
   /^https:\/\/.*\.lovable\.app$/,
   /^https:\/\/.*\.lovableproject\.com$/
