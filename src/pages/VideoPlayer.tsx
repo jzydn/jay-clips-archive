@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import ReactPlayer from 'react-player';
@@ -25,8 +24,12 @@ const VideoPlayer = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showShareMenu, setShowShareMenu] = useState(false);
+  const [viewCounted, setViewCounted] = useState(false);
 
   const formatViews = (views: number) => {
+    if (views >= 1000000) {
+      return `${(views / 1000000).toFixed(1)}M`;
+    }
     if (views >= 1000) {
       return `${(views / 1000).toFixed(1)}K`;
     }
@@ -40,6 +43,25 @@ const VideoPlayer = () => {
       day: 'numeric',
       year: 'numeric'
     });
+  };
+
+  // Increment view count when video starts playing
+  const handleVideoStart = async () => {
+    if (!viewCounted && video && videoId) {
+      try {
+        const response = await fetch(`${API_BASE_URL}/videos/${videoId}/view`, {
+          method: 'POST',
+        });
+        
+        if (response.ok) {
+          setViewCounted(true);
+          // Update local view count
+          setVideo(prev => prev ? { ...prev, views: prev.views + 1 } : null);
+        }
+      } catch (error) {
+        console.error('Error incrementing view count:', error);
+      }
+    }
   };
 
   const handleShare = (platform: string) => {
@@ -219,6 +241,7 @@ const VideoPlayer = () => {
             controls
             width="100%"
             height="100%"
+            onStart={handleVideoStart}
             style={{ position: 'absolute', top: 0, left: 0 }}
           />
         </div>
@@ -245,38 +268,38 @@ const VideoPlayer = () => {
             <div className="relative">
               <button
                 onClick={() => setShowShareMenu(!showShareMenu)}
-                className="flex items-center space-x-2 bg-slate-800 hover:bg-slate-700 text-white px-4 py-2 rounded-lg transition-colors"
+                className="flex items-center space-x-2 bg-white/5 backdrop-blur-sm border border-white/10 hover:bg-white/10 text-white px-4 py-2 rounded-lg transition-all duration-200"
               >
                 <Share2 className="w-4 h-4" />
                 <span>Share</span>
               </button>
               
               {showShareMenu && (
-                <div className="absolute right-0 top-12 bg-slate-800 border border-slate-700 rounded-lg py-2 z-10 min-w-[180px] shadow-xl">
+                <div className="absolute right-0 top-12 bg-black/40 backdrop-blur-md border border-white/10 rounded-xl py-2 z-10 min-w-[180px] shadow-2xl">
                   <button
                     onClick={() => handleShare('copy')}
-                    className="w-full px-4 py-2 text-left text-sm text-slate-300 hover:bg-slate-700 hover:text-white flex items-center space-x-2"
+                    className="w-full px-4 py-2 text-left text-sm text-slate-300 hover:bg-white/10 hover:text-white flex items-center space-x-2 transition-colors"
                   >
                     <Copy className="w-4 h-4" />
                     <span>Copy Link</span>
                   </button>
                   <button
                     onClick={() => handleShare('embed')}
-                    className="w-full px-4 py-2 text-left text-sm text-slate-300 hover:bg-slate-700 hover:text-white flex items-center space-x-2"
+                    className="w-full px-4 py-2 text-left text-sm text-slate-300 hover:bg-white/10 hover:text-white flex items-center space-x-2 transition-colors"
                   >
                     <ExternalLink className="w-4 h-4" />
                     <span>Copy Embed Code</span>
                   </button>
                   <button
                     onClick={() => handleShare('twitter')}
-                    className="w-full px-4 py-2 text-left text-sm text-slate-300 hover:bg-slate-700 hover:text-white flex items-center space-x-2"
+                    className="w-full px-4 py-2 text-left text-sm text-slate-300 hover:bg-white/10 hover:text-white flex items-center space-x-2 transition-colors"
                   >
                     <Twitter className="w-4 h-4" />
                     <span>Share on X</span>
                   </button>
                   <button
                     onClick={() => handleShare('discord')}
-                    className="w-full px-4 py-2 text-left text-sm text-slate-300 hover:bg-slate-700 hover:text-white flex items-center space-x-2"
+                    className="w-full px-4 py-2 text-left text-sm text-slate-300 hover:bg-white/10 hover:text-white flex items-center space-x-2 transition-colors"
                   >
                     <MessageCircle className="w-4 h-4" />
                     <span>Copy for Discord</span>
@@ -287,67 +310,76 @@ const VideoPlayer = () => {
           </div>
         </div>
 
-        {/* Information Tiles */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        {/* Modern Glassy Information Tiles */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
           {/* Views Tile */}
-          <div className="bg-slate-800 rounded-xl p-6 border border-slate-700">
-            <div className="flex items-center space-x-3">
-              <div className="bg-blue-500/20 p-3 rounded-lg">
-                <Eye className="w-6 h-6 text-blue-400" />
+          <div className="group relative">
+            <div className="absolute inset-0 bg-gradient-to-r from-blue-500/20 to-cyan-500/20 rounded-2xl blur-xl transition-all duration-300 group-hover:blur-2xl"></div>
+            <div className="relative bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl p-6 hover:bg-white/10 transition-all duration-300">
+              <div className="flex items-center justify-between mb-3">
+                <div className="w-12 h-12 bg-blue-500/20 rounded-xl flex items-center justify-center">
+                  <Eye className="w-6 h-6 text-blue-400" />
+                </div>
+                <div className="w-2 h-2 bg-blue-400 rounded-full animate-pulse"></div>
               </div>
-              <div>
-                <p className="text-2xl font-bold text-white">{formatViews(video.views)}</p>
-                <p className="text-gray-400 text-sm">Views</p>
-              </div>
+              <p className="text-3xl font-bold text-white mb-1">{formatViews(video.views)}</p>
+              <p className="text-gray-400 text-sm font-medium">Views</p>
             </div>
           </div>
 
           {/* Upload Date Tile */}
-          <div className="bg-slate-800 rounded-xl p-6 border border-slate-700">
-            <div className="flex items-center space-x-3">
-              <div className="bg-green-500/20 p-3 rounded-lg">
-                <Calendar className="w-6 h-6 text-green-400" />
+          <div className="group relative">
+            <div className="absolute inset-0 bg-gradient-to-r from-green-500/20 to-emerald-500/20 rounded-2xl blur-xl transition-all duration-300 group-hover:blur-2xl"></div>
+            <div className="relative bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl p-6 hover:bg-white/10 transition-all duration-300">
+              <div className="flex items-center justify-between mb-3">
+                <div className="w-12 h-12 bg-green-500/20 rounded-xl flex items-center justify-center">
+                  <Calendar className="w-6 h-6 text-green-400" />
+                </div>
+                <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
               </div>
-              <div>
-                <p className="text-lg font-bold text-white">{formatDate(video.upload_date)}</p>
-                <p className="text-gray-400 text-sm">Upload Date</p>
-              </div>
+              <p className="text-lg font-bold text-white mb-1">{formatDate(video.upload_date)}</p>
+              <p className="text-gray-400 text-sm font-medium">Upload Date</p>
             </div>
           </div>
 
           {/* Duration Tile */}
-          <div className="bg-slate-800 rounded-xl p-6 border border-slate-700">
-            <div className="flex items-center space-x-3">
-              <div className="bg-purple-500/20 p-3 rounded-lg">
-                <Clock className="w-6 h-6 text-purple-400" />
+          <div className="group relative">
+            <div className="absolute inset-0 bg-gradient-to-r from-purple-500/20 to-pink-500/20 rounded-2xl blur-xl transition-all duration-300 group-hover:blur-2xl"></div>
+            <div className="relative bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl p-6 hover:bg-white/10 transition-all duration-300">
+              <div className="flex items-center justify-between mb-3">
+                <div className="w-12 h-12 bg-purple-500/20 rounded-xl flex items-center justify-center">
+                  <Clock className="w-6 h-6 text-purple-400" />
+                </div>
+                <div className="w-2 h-2 bg-purple-400 rounded-full animate-pulse"></div>
               </div>
-              <div>
-                <p className="text-lg font-bold text-white">{video.duration}</p>
-                <p className="text-gray-400 text-sm">Duration</p>
-              </div>
+              <p className="text-lg font-bold text-white mb-1">{video.duration}</p>
+              <p className="text-gray-400 text-sm font-medium">Duration</p>
             </div>
           </div>
         </div>
 
         {/* Video Details Section */}
-        <div className="mt-8 bg-slate-800 rounded-xl p-6 border border-slate-700">
-          <h2 className="text-xl font-bold text-white mb-4">Video Details</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-            <div>
-              <span className="text-gray-400">Game:</span>
-              <span className="text-white ml-2">{video.game}</span>
-            </div>
-            <div>
-              <span className="text-gray-400">Creator:</span>
-              <span className="text-white ml-2">netsink</span>
-            </div>
-            <div>
-              <span className="text-gray-400">Video ID:</span>
-              <span className="text-white ml-2">{video.video_hash || video.id}</span>
-            </div>
-            <div>
-              <span className="text-gray-400">Format:</span>
-              <span className="text-white ml-2">MP4</span>
+        <div className="relative group">
+          <div className="absolute inset-0 bg-gradient-to-r from-orange-500/10 to-red-500/10 rounded-2xl blur-xl transition-all duration-300 group-hover:blur-2xl"></div>
+          <div className="relative bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl p-6 hover:bg-white/10 transition-all duration-300">
+            <h2 className="text-xl font-bold text-white mb-4">Video Details</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-sm">
+              <div className="flex justify-between items-center py-2">
+                <span className="text-gray-400 font-medium">Game</span>
+                <span className="text-white bg-orange-500/20 px-3 py-1 rounded-lg">{video.game}</span>
+              </div>
+              <div className="flex justify-between items-center py-2">
+                <span className="text-gray-400 font-medium">Creator</span>
+                <span className="text-white">netsink</span>
+              </div>
+              <div className="flex justify-between items-center py-2">
+                <span className="text-gray-400 font-medium">Video ID</span>
+                <span className="text-white font-mono text-xs bg-slate-800/50 px-2 py-1 rounded">{video.video_hash || video.id}</span>
+              </div>
+              <div className="flex justify-between items-center py-2">
+                <span className="text-gray-400 font-medium">Format</span>
+                <span className="text-white">MP4</span>
+              </div>
             </div>
           </div>
         </div>

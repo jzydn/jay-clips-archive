@@ -361,6 +361,41 @@ app.get('/api/videos/user/:userId', async (req, res) => {
   }
 });
 
+// NEW ENDPOINT: Increment video views
+app.post('/api/videos/:videoId/view', async (req, res) => {
+  try {
+    const videoId = req.params.videoId;
+    const connection = await mysql.createConnection(dbConfig);
+    
+    // Increment view count
+    const [result] = await connection.execute(
+      'UPDATE videos SET views = COALESCE(views, 0) + 1 WHERE id = ? OR video_hash = ?',
+      [videoId, videoId]
+    );
+
+    await connection.end();
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'Video not found'
+      });
+    }
+
+    res.json({
+      success: true,
+      message: 'View count incremented'
+    });
+
+  } catch (error) {
+    console.error('View increment error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to increment view count: ' + error.message
+    });
+  }
+});
+
 // Health check
 app.get('/api/health', (req, res) => {
   res.json({ status: 'OK', timestamp: new Date().toISOString() });
