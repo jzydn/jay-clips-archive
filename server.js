@@ -1,4 +1,3 @@
-
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
@@ -15,7 +14,7 @@ const __dirname = path.dirname(__filename);
 const app = express();
 const PORT = process.env.PORT || 8086;
 
-// Trust proxy for rate limiting (required when behind a proxy)
+// FIX: Trust proxy for rate limiting (required when behind a proxy)
 app.set('trust proxy', 1);
 
 // Create MySQL connection
@@ -71,6 +70,7 @@ app.use(cors({
     'http://localhost:8081', 
     'http://46.244.96.25:8081',
     'https://vids.extracted.lol',
+    'https://data.extracted.lol',
     /^https:\/\/.*\.lovable\.app$/,
     /^https:\/\/.*\.lovableproject\.com$/
   ],
@@ -88,6 +88,7 @@ const limiter = rateLimit({
     // Skip rate limiting for your own domain and localhost
     const origin = request.get('origin') || request.get('referer') || '';
     return origin.includes('vids.extracted.lol') || 
+           origin.includes('data.extracted.lol') ||
            origin.includes('localhost') || 
            origin.includes('127.0.0.1') ||
            origin.includes('46.244.96.25');
@@ -349,11 +350,21 @@ app.post('/api/videos/:videoId/view', async (req, res) => {
     const videoId = req.params.videoId;
     const connection = await mysql.createConnection(dbConfig);
     
-    // Increment view count
-    const [result] = await connection.execute(
-      'UPDATE videos SET views = COALESCE(views, 0) + 1 WHERE id = ? OR video_hash = ?',
-      [videoId, videoId]
-    );
+    let result;
+    // Check if videoId is a hash (string) or numeric ID
+    if (isNaN(videoId)) {
+      // It's a hash
+      [result] = await connection.execute(
+        'UPDATE videos SET views = COALESCE(views, 0) + 1 WHERE video_hash = ?',
+        [videoId]
+      );
+    } else {
+      // It's a numeric ID
+      [result] = await connection.execute(
+        'UPDATE videos SET views = COALESCE(views, 0) + 1 WHERE id = ?',
+        [parseInt(videoId)]
+      );
+    }
 
     await connection.end();
 
@@ -370,6 +381,7 @@ app.post('/api/videos/:videoId/view', async (req, res) => {
     });
 
   } catch (error) {
+    console.log('View increment error:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to increment view count: ' + error.message
