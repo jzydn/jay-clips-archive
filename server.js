@@ -65,11 +65,12 @@ app.use(cors({
     'http://localhost:3000', 
     'http://localhost:8081', 
     'http://46.244.96.25:8081',
+    'https://vids.extracted.lol',  // Add the production domain
     /^https:\/\/.*\.lovable\.app$/,  // Allow all Lovable preview domains
     /^https:\/\/.*\.lovableproject\.com$/ // Alternative Lovable domains
   ],
   credentials: true,
-  methods: ['GET', 'POST', 'DELETE', 'HEAD', 'OPTIONS'],
+  methods: ['GET', 'POST', 'DELETE', 'HEAD', 'OPTIONS', 'PATCH'],  // Add PATCH method
   allowedHeaders: ['Content-Type', 'Authorization', 'Range'],
   exposedHeaders: ['Content-Range', 'Content-Length', 'Accept-Ranges']
 }));

@@ -141,8 +141,8 @@ const VideoPlayer = () => {
           throw new Error('Video not found');
         }
 
-        // Check if video is private and user is not Jay
-        if (foundVideo.is_private && username !== "Jay") {
+        // Check if video is private and user is not the owner (Jay)
+        if (foundVideo.is_private && !isSignedIn) {
           setIsPrivateVideo(true);
           setError('This clip is private');
           return;
@@ -160,7 +160,7 @@ const VideoPlayer = () => {
     };
 
     fetchVideo();
-  }, [id, username]);
+  }, [id, isSignedIn]); // Changed dependency from username to isSignedIn
 
   const formatViews = (views: number) => {
     if (views >= 1000) {
@@ -279,19 +279,44 @@ const VideoPlayer = () => {
             <span>Back to clips</span>
           </button>
           <div className="flex items-center justify-center py-20">
-            <div className="text-center space-y-4">
+            <div className="text-center space-y-6 max-w-md mx-auto">
               {isPrivateVideo ? (
                 <>
-                  <div className="w-24 h-24 mx-auto bg-red-900 rounded-full flex items-center justify-center">
-                    <Lock className="w-12 h-12 text-red-400" />
+                  <div className="w-32 h-32 mx-auto bg-gradient-to-br from-red-900/50 to-red-800/50 rounded-full flex items-center justify-center border-2 border-red-500/30">
+                    <Lock className="w-16 h-16 text-red-400" />
                   </div>
-                  <h3 className="text-xl font-semibold text-red-400">This clip is private</h3>
-                  <p className="text-gray-500">Only the owner can view this video.</p>
+                  <div className="space-y-3">
+                    <h3 className="text-2xl font-bold text-red-400">This clip is private</h3>
+                    <p className="text-slate-400 leading-relaxed">
+                      This video has been marked as private by the creator. Only authorized users can view this content.
+                    </p>
+                    <div className="pt-4">
+                      <button
+                        onClick={() => navigate('/')}
+                        className="px-6 py-3 bg-slate-800 hover:bg-slate-700 text-white rounded-lg transition-colors"
+                      >
+                        Browse Public Clips
+                      </button>
+                    </div>
+                  </div>
                 </>
               ) : (
                 <>
-                  <h3 className="text-xl font-semibold text-red-400">Video not found</h3>
-                  <p className="text-gray-500">{error || 'The video you\'re looking for doesn\'t exist.'}</p>
+                  <div className="w-32 h-32 mx-auto bg-gradient-to-br from-slate-800 to-slate-700 rounded-full flex items-center justify-center border-2 border-slate-600">
+                    <Eye className="w-16 h-16 text-slate-400" />
+                  </div>
+                  <div className="space-y-3">
+                    <h3 className="text-2xl font-bold text-red-400">Video not found</h3>
+                    <p className="text-slate-400">{error || 'The video you\'re looking for doesn\'t exist or may have been removed.'}</p>
+                    <div className="pt-4">
+                      <button
+                        onClick={() => navigate('/')}
+                        className="px-6 py-3 bg-slate-800 hover:bg-slate-700 text-white rounded-lg transition-colors"
+                      >
+                        Back to Home
+                      </button>
+                    </div>
+                  </div>
                 </>
               )}
             </div>
@@ -491,3 +516,5 @@ const VideoPlayer = () => {
 };
 
 export default VideoPlayer;
+
+}
