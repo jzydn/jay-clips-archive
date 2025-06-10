@@ -1,4 +1,5 @@
 
+
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
@@ -15,7 +16,7 @@ const __dirname = path.dirname(__filename);
 const app = express();
 const PORT = process.env.PORT || 8086;
 
-// Trust proxy for rate limiting (required when behind a proxy)
+// CRITICAL: Trust proxy MUST be set BEFORE rate limiting
 app.set('trust proxy', 1);
 
 // Create MySQL connection
@@ -62,7 +63,7 @@ app.use(helmet({
   crossOriginResourcePolicy: { policy: "cross-origin" }
 }));
 
-// Enhanced CORS configuration with proper headers
+// FIXED CORS - More permissive for your domain
 app.use(cors({
   origin: [
     'http://localhost:5173', 
@@ -71,6 +72,7 @@ app.use(cors({
     'http://localhost:8081', 
     'http://46.244.96.25:8081',
     'https://vids.extracted.lol',
+    'https://data.extracted.lol',
     /^https:\/\/.*\.lovable\.app$/,
     /^https:\/\/.*\.lovableproject\.com$/
   ],
@@ -80,24 +82,24 @@ app.use(cors({
   exposedHeaders: ['Content-Range', 'Content-Length', 'Accept-Ranges']
 }));
 
-// Fixed rate limiting configuration
+// SIMPLIFIED rate limiting - disable for your domain
 const limiter = rateLimit({
   windowMs: 5 * 60 * 1000, // 5 minutes
-  max: 1000, // requests per window
-  skip: (request, response) => {
-    // Skip rate limiting for your own domain and localhost
-    const origin = request.get('origin') || request.get('referer') || '';
+  max: 10000, // Much higher limit
+  skip: (req) => {
+    const origin = req.get('origin') || req.get('referer') || '';
+    const host = req.get('host') || '';
+    
+    // Skip rate limiting entirely for your domains
     return origin.includes('vids.extracted.lol') || 
+           origin.includes('data.extracted.lol') ||
+           host.includes('data.extracted.lol') ||
            origin.includes('localhost') || 
            origin.includes('127.0.0.1') ||
            origin.includes('46.244.96.25');
   },
   standardHeaders: true,
-  legacyHeaders: false,
-  message: {
-    error: 'Too many requests from this IP, please try again later.',
-    retryAfter: '5 minutes'
-  }
+  legacyHeaders: false
 });
 app.use(limiter);
 
@@ -145,6 +147,7 @@ app.get('/api/videos/recent', async (req, res) => {
     });
 
   } catch (error) {
+    console.error('Recent videos error:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to fetch recent videos: ' + error.message
@@ -193,6 +196,7 @@ app.post('/api/videos/upload', upload.single('video'), async (req, res) => {
     });
 
   } catch (error) {
+    console.error('Upload error:', error);
     res.status(500).json({
       success: false,
       message: 'Upload failed: ' + error.message
@@ -228,6 +232,7 @@ app.get('/api/videos/hash/:hash', async (req, res) => {
     });
 
   } catch (error) {
+    console.error('Get video by hash error:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to fetch video: ' + error.message
@@ -262,6 +267,7 @@ app.patch('/api/videos/:videoId/privacy', async (req, res) => {
     });
 
   } catch (error) {
+    console.error('Privacy update error:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to update privacy: ' + error.message
@@ -313,6 +319,7 @@ app.delete('/api/videos/:videoId', async (req, res) => {
     });
 
   } catch (error) {
+    console.error('Delete error:', error);
     res.status(500).json({
       success: false,
       message: 'Delete failed: ' + error.message
@@ -338,6 +345,7 @@ app.get('/api/videos/user/:userId', async (req, res) => {
     });
 
   } catch (error) {
+    console.error('User videos error:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to fetch videos: ' + error.message
@@ -345,27 +353,27 @@ app.get('/api/videos/user/:userId', async (req, res) => {
   }
 });
 
-// FIXED ENDPOINT: Increment video views
+// COMPLETELY FIXED: Increment video views - Handle hash vs ID correctly
 app.post('/api/videos/:videoId/view', async (req, res) => {
   try {
     const videoId = req.params.videoId;
     const connection = await mysql.createConnection(dbConfig);
     
-    // Check if videoId is a hash (contains letters) or numeric ID
+    // Check if videoId contains letters (hash) or is purely numeric (ID)
     const isHash = /[a-zA-Z]/.test(videoId);
     
     let result;
     if (isHash) {
-      // If it's a hash, update by video_hash only
+      // If it's a hash, search by video_hash ONLY
       [result] = await connection.execute(
         'UPDATE videos SET views = COALESCE(views, 0) + 1 WHERE video_hash = ?',
         [videoId]
       );
     } else {
-      // If it's numeric, update by id only
+      // If it's numeric, search by id ONLY  
       [result] = await connection.execute(
         'UPDATE videos SET views = COALESCE(views, 0) + 1 WHERE id = ?',
-        [videoId]
+        [parseInt(videoId)]
       );
     }
 
@@ -398,5 +406,6 @@ app.get('/api/health', (req, res) => {
 });
 
 app.listen(PORT, () => {
-  // Server start message removed for cleaner logs
+  console.log(`Server running on port ${PORT}`);
 });
+
