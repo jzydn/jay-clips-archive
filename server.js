@@ -116,6 +116,14 @@ app.use('/uploads', (req, res, next) => {
     return res.sendStatus(200);
   }
   
+  // Handle path mapping from old database paths to new folder structure
+  let requestPath = req.path;
+  if (requestPath.includes('/videos/')) {
+    // Replace any old jay-clips-archive references with extractedclips
+    requestPath = requestPath.replace(/jay-clips-archive/g, 'extractedclips');
+    req.url = requestPath;
+  }
+  
   next();
 }, express.static(path.join(__dirname, 'uploads'), {
   setHeaders: (res, path) => {
