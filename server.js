@@ -1,3 +1,4 @@
+
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
@@ -14,8 +15,8 @@ const __dirname = path.dirname(__filename);
 const app = express();
 const PORT = process.env.PORT || 8086;
 
-// FIX: Trust proxy for rate limiting (required when behind a proxy)
-app.set('trust proxy', 1);
+// FIXED: Properly configure trust proxy for NGINX reverse proxy
+app.set('trust proxy', ['loopback', 'linklocal', 'uniquelocal']);
 
 // Create MySQL connection
 const dbConfig = {
@@ -80,18 +81,25 @@ app.use(cors({
   exposedHeaders: ['Content-Range', 'Content-Length', 'Accept-Ranges']
 }));
 
-// More lenient rate limiting with exclusions for your own domain
+// FIXED: More lenient rate limiting with proper proxy handling
 const limiter = rateLimit({
-  windowMs: 5 * 60 * 1000, // 5 minutes instead of 15
-  max: 1000, // Increased from 100 to 1000 requests per window
+  windowMs: 5 * 60 * 1000, // 5 minutes
+  max: 1000, // High limit
+  standardHeaders: true,
+  legacyHeaders: false,
   skip: (request, response) => {
-    // Skip rate limiting for your own domain and localhost
+    // Skip rate limiting for your own domains and localhost
     const origin = request.get('origin') || request.get('referer') || '';
+    const host = request.get('host') || '';
+    const forwarded = request.get('x-forwarded-for') || '';
+    
     return origin.includes('vids.extracted.lol') || 
            origin.includes('data.extracted.lol') ||
+           host.includes('extracted.lol') ||
            origin.includes('localhost') || 
            origin.includes('127.0.0.1') ||
-           origin.includes('46.244.96.25');
+           origin.includes('46.244.96.25') ||
+           forwarded.includes('127.0.0.1');
   },
   message: {
     error: 'Too many requests from this IP, please try again later.',
@@ -344,22 +352,25 @@ app.get('/api/videos/user/:userId', async (req, res) => {
   }
 });
 
-// NEW ENDPOINT: Increment video views
+// FIXED: Completely rewritten view increment endpoint
 app.post('/api/videos/:videoId/view', async (req, res) => {
   try {
     const videoId = req.params.videoId;
     const connection = await mysql.createConnection(dbConfig);
     
     let result;
-    // Check if videoId is a hash (string) or numeric ID
-    if (isNaN(videoId)) {
-      // It's a hash
+    
+    // Check if videoId is a hash (contains non-numeric characters) or numeric ID
+    if (!/^\d+$/.test(videoId)) {
+      // It's a hash - use video_hash column
+      console.log('Incrementing view for hash:', videoId);
       [result] = await connection.execute(
         'UPDATE videos SET views = COALESCE(views, 0) + 1 WHERE video_hash = ?',
         [videoId]
       );
     } else {
-      // It's a numeric ID
+      // It's a numeric ID - use id column
+      console.log('Incrementing view for ID:', videoId);
       [result] = await connection.execute(
         'UPDATE videos SET views = COALESCE(views, 0) + 1 WHERE id = ?',
         [parseInt(videoId)]
@@ -369,19 +380,21 @@ app.post('/api/videos/:videoId/view', async (req, res) => {
     await connection.end();
 
     if (result.affectedRows === 0) {
+      console.log('No video found for identifier:', videoId);
       return res.status(404).json({
         success: false,
         message: 'Video not found'
       });
     }
 
+    console.log('View count incremented successfully for:', videoId);
     res.json({
       success: true,
       message: 'View count incremented'
     });
 
   } catch (error) {
-    console.log('View increment error:', error);
+    console.error('View increment error:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to increment view count: ' + error.message
@@ -395,5 +408,5 @@ app.get('/api/health', (req, res) => {
 });
 
 app.listen(PORT, () => {
-  // Server start message removed for cleaner logs
+  console.log(`Server running on port ${PORT}`);
 });
