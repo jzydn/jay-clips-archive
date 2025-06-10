@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import ReactPlayer from 'react-player';
@@ -310,76 +311,55 @@ const VideoPlayer = () => {
           </div>
         </div>
 
-        {/* Modern Glassy Information Tiles */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        {/* Clean Minimal Information Tiles */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
           {/* Views Tile */}
-          <div className="group relative">
-            <div className="absolute inset-0 bg-gradient-to-r from-blue-500/20 to-cyan-500/20 rounded-2xl blur-xl transition-all duration-300 group-hover:blur-2xl"></div>
-            <div className="relative bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl p-6 hover:bg-white/10 transition-all duration-300">
-              <div className="flex items-center justify-between mb-3">
-                <div className="w-12 h-12 bg-blue-500/20 rounded-xl flex items-center justify-center">
-                  <Eye className="w-6 h-6 text-blue-400" />
-                </div>
-                <div className="w-2 h-2 bg-blue-400 rounded-full animate-pulse"></div>
-              </div>
-              <p className="text-3xl font-bold text-white mb-1">{formatViews(video.views)}</p>
-              <p className="text-gray-400 text-sm font-medium">Views</p>
+          <div className="bg-slate-800/40 backdrop-blur-sm border border-slate-700/50 rounded-lg p-6 hover:bg-slate-800/60 transition-colors">
+            <div className="flex items-center space-x-3 mb-2">
+              <Eye className="w-5 h-5 text-slate-400" />
+              <span className="text-slate-400 text-sm font-medium">Views</span>
             </div>
+            <p className="text-2xl font-semibold text-white">{formatViews(video.views)}</p>
           </div>
 
           {/* Upload Date Tile */}
-          <div className="group relative">
-            <div className="absolute inset-0 bg-gradient-to-r from-green-500/20 to-emerald-500/20 rounded-2xl blur-xl transition-all duration-300 group-hover:blur-2xl"></div>
-            <div className="relative bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl p-6 hover:bg-white/10 transition-all duration-300">
-              <div className="flex items-center justify-between mb-3">
-                <div className="w-12 h-12 bg-green-500/20 rounded-xl flex items-center justify-center">
-                  <Calendar className="w-6 h-6 text-green-400" />
-                </div>
-                <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
-              </div>
-              <p className="text-lg font-bold text-white mb-1">{formatDate(video.upload_date)}</p>
-              <p className="text-gray-400 text-sm font-medium">Upload Date</p>
+          <div className="bg-slate-800/40 backdrop-blur-sm border border-slate-700/50 rounded-lg p-6 hover:bg-slate-800/60 transition-colors">
+            <div className="flex items-center space-x-3 mb-2">
+              <Calendar className="w-5 h-5 text-slate-400" />
+              <span className="text-slate-400 text-sm font-medium">Upload Date</span>
             </div>
+            <p className="text-lg font-semibold text-white">{formatDate(video.upload_date)}</p>
           </div>
 
           {/* Duration Tile */}
-          <div className="group relative">
-            <div className="absolute inset-0 bg-gradient-to-r from-purple-500/20 to-pink-500/20 rounded-2xl blur-xl transition-all duration-300 group-hover:blur-2xl"></div>
-            <div className="relative bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl p-6 hover:bg-white/10 transition-all duration-300">
-              <div className="flex items-center justify-between mb-3">
-                <div className="w-12 h-12 bg-purple-500/20 rounded-xl flex items-center justify-center">
-                  <Clock className="w-6 h-6 text-purple-400" />
-                </div>
-                <div className="w-2 h-2 bg-purple-400 rounded-full animate-pulse"></div>
-              </div>
-              <p className="text-lg font-bold text-white mb-1">{video.duration}</p>
-              <p className="text-gray-400 text-sm font-medium">Duration</p>
+          <div className="bg-slate-800/40 backdrop-blur-sm border border-slate-700/50 rounded-lg p-6 hover:bg-slate-800/60 transition-colors">
+            <div className="flex items-center space-x-3 mb-2">
+              <Clock className="w-5 h-5 text-slate-400" />
+              <span className="text-slate-400 text-sm font-medium">Duration</span>
             </div>
+            <p className="text-lg font-semibold text-white">{video.duration}</p>
           </div>
         </div>
 
         {/* Video Details Section */}
-        <div className="relative group">
-          <div className="absolute inset-0 bg-gradient-to-r from-orange-500/10 to-red-500/10 rounded-2xl blur-xl transition-all duration-300 group-hover:blur-2xl"></div>
-          <div className="relative bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl p-6 hover:bg-white/10 transition-all duration-300">
-            <h2 className="text-xl font-bold text-white mb-4">Video Details</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-sm">
-              <div className="flex justify-between items-center py-2">
-                <span className="text-gray-400 font-medium">Game</span>
-                <span className="text-white bg-orange-500/20 px-3 py-1 rounded-lg">{video.game}</span>
-              </div>
-              <div className="flex justify-between items-center py-2">
-                <span className="text-gray-400 font-medium">Creator</span>
-                <span className="text-white">netsink</span>
-              </div>
-              <div className="flex justify-between items-center py-2">
-                <span className="text-gray-400 font-medium">Video ID</span>
-                <span className="text-white font-mono text-xs bg-slate-800/50 px-2 py-1 rounded">{video.video_hash || video.id}</span>
-              </div>
-              <div className="flex justify-between items-center py-2">
-                <span className="text-gray-400 font-medium">Format</span>
-                <span className="text-white">MP4</span>
-              </div>
+        <div className="bg-slate-800/40 backdrop-blur-sm border border-slate-700/50 rounded-lg p-6 hover:bg-slate-800/60 transition-colors">
+          <h2 className="text-xl font-bold text-white mb-4">Video Details</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-sm">
+            <div className="flex justify-between items-center py-2">
+              <span className="text-slate-400 font-medium">Game</span>
+              <span className="text-white bg-orange-500/20 px-3 py-1 rounded-lg">{video.game}</span>
+            </div>
+            <div className="flex justify-between items-center py-2">
+              <span className="text-slate-400 font-medium">Creator</span>
+              <span className="text-white">netsink</span>
+            </div>
+            <div className="flex justify-between items-center py-2">
+              <span className="text-slate-400 font-medium">Video ID</span>
+              <span className="text-white font-mono text-xs bg-slate-700/50 px-2 py-1 rounded">{video.video_hash || video.id}</span>
+            </div>
+            <div className="flex justify-between items-center py-2">
+              <span className="text-slate-400 font-medium">Format</span>
+              <span className="text-white">MP4</span>
             </div>
           </div>
         </div>
