@@ -349,11 +349,23 @@ app.post('/api/videos/:videoId/view', async (req, res) => {
     const videoId = req.params.videoId;
     const connection = await mysql.createConnection(dbConfig);
     
-    // Increment view count
-    const [result] = await connection.execute(
-      'UPDATE videos SET views = COALESCE(views, 0) + 1 WHERE id = ? OR video_hash = ?',
-      [videoId, videoId]
-    );
+    // Check if videoId is a hash (contains letters) or numeric ID
+    const isHash = /[a-zA-Z]/.test(videoId);
+    
+    let result;
+    if (isHash) {
+      // If it's a hash, update by video_hash
+      [result] = await connection.execute(
+        'UPDATE videos SET views = COALESCE(views, 0) + 1 WHERE video_hash = ?',
+        [videoId]
+      );
+    } else {
+      // If it's numeric, update by id
+      [result] = await connection.execute(
+        'UPDATE videos SET views = COALESCE(views, 0) + 1 WHERE id = ?',
+        [videoId]
+      );
+    }
 
     await connection.end();
 
