@@ -63,8 +63,8 @@ app.use(helmet({
 const allowedDomains = [
   'http://localhost:5173', 
   'http://localhost:3000', 
-  'http://localhost:8080', 
-  'http://46.244.96.25:8080',
+  'http://localhost:8081', 
+  'http://46.244.96.25:8081',
   'https://vids.extracted.lol',
   /^https:\/\/.*\.lovable\.app$/,
   /^https:\/\/.*\.lovableproject\.com$/
