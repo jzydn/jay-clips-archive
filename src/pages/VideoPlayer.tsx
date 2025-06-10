@@ -1,166 +1,27 @@
-import { useState, useEffect } from "react";
-import { useParams, useNavigate } from "react-router-dom";
-import { ArrowLeft, Share2, Download, Eye, Calendar, Copy, ExternalLink, Trash2, Lock } from "lucide-react";
-import { Header } from "@/components/Header";
-import { buildApiUrl } from "@/config/api";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
+import React, { useState, useEffect } from 'react';
+import { useParams } from 'react-router-dom';
+import ReactPlayer from 'react-player';
+import { Clock } from "lucide-react";
 
 interface Video {
   id: string | number;
   title: string;
-  subtitle?: string;
-  game: string;
-  duration: string;
   file_path: string;
-  thumbnail_path?: string;
+  game: string;
   upload_date: string;
   views: number;
-  share_token?: string;
+  duration: string;
   video_hash?: string;
-  is_private?: boolean;
 }
 
+const API_BASE_URL = "https://data.extracted.lol/api";
+
 const VideoPlayer = () => {
-  const { id } = useParams(); // This could be either hash or ID
-  const navigate = useNavigate();
-  const [showShareMenu, setShowShareMenu] = useState(false);
+  const { id } = useParams<{ id: string }>();
+  const videoId = id;
   const [video, setVideo] = useState<Video | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [isDeleting, setIsDeleting] = useState(false);
-  const [isPrivateVideo, setIsPrivateVideo] = useState(false);
-
-  // Check authentication status
-  const [isSignedIn, setIsSignedIn] = useState(false);
-  const [username, setUsername] = useState("");
-
-  useEffect(() => {
-    const storedUser = localStorage.getItem('loggedInUser');
-    if (storedUser) {
-      setIsSignedIn(true);
-      setUsername(storedUser);
-    }
-  }, []);
-
-  // Update meta tags for video embedding
-  useEffect(() => {
-    if (video) {
-      const videoUrl = `https://data.extracted.lol${video.file_path}`;
-      const thumbnailUrl = video.thumbnail_path ? `https://data.extracted.lol${video.thumbnail_path}` : '';
-      const pageUrl = window.location.href;
-
-      // Update document title
-      document.title = `${video.title} - Gaming Clips`;
-
-      // Remove existing meta tags
-      const existingMetas = document.querySelectorAll('meta[property^="og:"], meta[name="twitter:"], meta[property="video:"]');
-      existingMetas.forEach(meta => meta.remove());
-
-      // Create and append new meta tags
-      const metaTags = [
-        // Open Graph tags
-        { property: 'og:title', content: video.title },
-        { property: 'og:description', content: video.subtitle || `${video.game} gameplay clip - ${video.duration}` },
-        { property: 'og:type', content: 'video.other' },
-        { property: 'og:url', content: pageUrl },
-        { property: 'og:video', content: videoUrl },
-        { property: 'og:video:secure_url', content: videoUrl },
-        { property: 'og:video:type', content: 'video/mp4' },
-        { property: 'og:video:width', content: '1280' },
-        { property: 'og:video:height', content: '720' },
-        ...(thumbnailUrl ? [
-          { property: 'og:image', content: thumbnailUrl },
-          { property: 'og:image:width', content: '1280' },
-          { property: 'og:image:height', content: '720' }
-        ] : []),
-        
-        // Twitter Card tags
-        { name: 'twitter:card', content: 'player' },
-        { name: 'twitter:title', content: video.title },
-        { name: 'twitter:description', content: video.subtitle || `${video.game} gameplay clip` },
-        { name: 'twitter:player', content: videoUrl },
-        { name: 'twitter:player:width', content: '1280' },
-        { name: 'twitter:player:height', content: '720' },
-        ...(thumbnailUrl ? [{ name: 'twitter:image', content: thumbnailUrl }] : []),
-
-        // Video-specific meta tags
-        { property: 'video:duration', content: video.duration },
-        { property: 'video:tag', content: video.game }
-      ];
-
-      metaTags.forEach(({ property, name, content }) => {
-        const meta = document.createElement('meta');
-        if (property) meta.setAttribute('property', property);
-        if (name) meta.setAttribute('name', name);
-        meta.setAttribute('content', content);
-        document.head.appendChild(meta);
-      });
-    }
-
-    // Cleanup function to restore default title
-    return () => {
-      document.title = 'Gaming Clips';
-    };
-  }, [video]);
-
-  // Fetch video data from MySQL database
-  useEffect(() => {
-    const fetchVideo = async () => {
-      if (!id) return;
-      
-      try {
-        setIsLoading(true);
-        
-        // Try to fetch by hash first, then fall back to ID
-        let response = await fetch(buildApiUrl('/videos/hash', id));
-        let foundVideo = null;
-        
-        if (response.ok) {
-          const data = await response.json();
-          foundVideo = data.video;
-        } else {
-          // Fall back to fetching all user videos and finding by ID
-          response = await fetch(buildApiUrl('/videos/user/1'));
-          if (response.ok) {
-            const data = await response.json();
-            foundVideo = data.videos.find((v: Video) => v.id.toString() === id);
-          }
-        }
-        
-        if (!foundVideo) {
-          throw new Error('Video not found');
-        }
-
-        // Check if video is private and user is not the owner (Jay)
-        if (foundVideo.is_private && !isSignedIn) {
-          setIsPrivateVideo(true);
-          setError('This clip is private');
-          return;
-        }
-        
-        setVideo(foundVideo);
-        console.log("Fetched video from MySQL:", foundVideo);
-
-      } catch (error) {
-        console.error("Error fetching video:", error);
-        setError(error instanceof Error ? error.message : 'Unknown error');
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchVideo();
-  }, [id, isSignedIn]); // Changed dependency from username to isSignedIn
 
   const formatViews = (views: number) => {
     if (views >= 1000) {
@@ -172,345 +33,177 @@ const VideoPlayer = () => {
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     return date.toLocaleDateString('en-US', { 
-      year: 'numeric',
-      month: 'long', 
+      month: 'short', 
       day: 'numeric' 
     });
   };
 
-  const handleShare = (platform: string) => {
-    const url = window.location.href;
-    const text = `Check out this clip: ${video?.title}`;
-    
-    switch (platform) {
-      case 'copy':
-        navigator.clipboard.writeText(url);
-        alert('Link copied to clipboard!');
-        break;
-      case 'twitter':
-        window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`);
-        break;
-      case 'discord':
-        navigator.clipboard.writeText(`${text} ${url}`);
-        alert('Link copied for Discord!');
-        break;
-    }
-    setShowShareMenu(false);
-  };
-
-  const handleDownload = () => {
-    if (video?.file_path) {
+  // Enhanced meta tag setup for Discord embedding
+  useEffect(() => {
+    if (video) {
       const videoUrl = `https://data.extracted.lol${video.file_path}`;
-      const link = document.createElement('a');
-      link.href = videoUrl;
-      link.download = `${video.title}.mp4`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-    }
-  };
-
-  const handleDelete = async () => {
-    if (!video) return;
-    
-    setIsDeleting(true);
-    try {
-      const response = await fetch(buildApiUrl('/videos', video.id.toString()), {
-        method: 'DELETE',
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to delete video');
-      }
-
-      const result = await response.json();
-      console.log('Video deleted:', result);
+      const pageUrl = window.location.href;
+      const embedUrl = `${window.location.origin}/embed/${videoId}`;
       
-      // Navigate back to home after successful deletion
-      navigate('/');
-    } catch (error) {
-      console.error('Delete error:', error);
-      alert('Failed to delete video. Please try again.');
-    } finally {
-      setIsDeleting(false);
+      // Set page title
+      document.title = `${video.title} - netsink's clips`;
+      
+      // Update meta tags for better Discord embedding
+      const metaTags = [
+        { property: 'og:title', content: video.title },
+        { property: 'og:description', content: `${video.game} clip by netsink` },
+        { property: 'og:type', content: 'video.other' },
+        { property: 'og:url', content: pageUrl },
+        { property: 'og:video', content: videoUrl },
+        { property: 'og:video:secure_url', content: videoUrl },
+        { property: 'og:video:type', content: 'video/mp4' },
+        { property: 'og:video:width', content: '1280' },
+        { property: 'og:video:height', content: '720' },
+        { property: 'og:image', content: videoUrl },
+        { name: 'twitter:card', content: 'player' },
+        { name: 'twitter:title', content: video.title },
+        { name: 'twitter:description', content: `${video.game} clip by netsink` },
+        { name: 'twitter:image', content: videoUrl },
+        { name: 'twitter:player', content: embedUrl },
+        { name: 'twitter:player:width', content: '1280' },
+        { name: 'twitter:player:height', content: '720' },
+      ];
+
+      // Remove existing meta tags and add new ones
+      metaTags.forEach(tag => {
+        const existing = document.querySelector(`meta[${tag.property ? 'property' : 'name'}="${tag.property || tag.name}"]`);
+        if (existing) {
+          existing.remove();
+        }
+        
+        const meta = document.createElement('meta');
+        if (tag.property) {
+          meta.setAttribute('property', tag.property);
+        } else {
+          meta.setAttribute('name', tag.name);
+        }
+        meta.setAttribute('content', tag.content);
+        document.head.appendChild(meta);
+      });
     }
-  };
 
-  const handleSignIn = (user: string) => {
-    setIsSignedIn(true);
-    setUsername(user);
-    localStorage.setItem('loggedInUser', user);
-  };
+    return () => {
+      // Cleanup meta tags when component unmounts
+      const metaSelectors = [
+        'meta[property^="og:"]',
+        'meta[name^="twitter:"]'
+      ];
+      
+      metaSelectors.forEach(selector => {
+        const elements = document.querySelectorAll(selector);
+        elements.forEach(el => el.remove());
+      });
+    };
+  }, [video, videoId]);
 
-  const handleSignOut = () => {
-    setIsSignedIn(false);
-    setUsername("");
-    localStorage.removeItem('loggedInUser');
-  };
+  // Enhanced fetch with Jay authentication
+  useEffect(() => {
+    const fetchVideo = async () => {
+      if (!videoId) return;
+
+      try {
+        setIsLoading(true);
+        const isJayAuthenticated = localStorage.getItem('loggedInUser') === 'Jay';
+        const headers: Record<string, string> = {};
+        
+        if (isJayAuthenticated) {
+          headers['X-User-Type'] = 'jay';
+        }
+
+        const response = await fetch(`${API_BASE_URL}/videos/hash/${videoId}`, {
+          headers
+        });
+        
+        if (!response.ok) {
+          if (response.status === 403) {
+            setError('This video is private and you do not have permission to view it.');
+          } else if (response.status === 404) {
+            setError('Video not found. It may have been deleted or the link is incorrect.');
+          } else {
+            setError('Failed to load video. Please try again later.');
+          }
+          return;
+        }
+
+        const data = await response.json();
+        setVideo(data.video);
+        setError(null);
+      } catch (error) {
+        console.error('Error fetching video:', error);
+        setError('Network error. Please check your connection and try again.');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchVideo();
+  }, [videoId]);
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950">
-        <Header isSignedIn={isSignedIn} onSignIn={handleSignIn} username={username} onSignOut={handleSignOut} />
-        <main className="container mx-auto px-6 py-8">
-          <div className="flex items-center justify-center py-20">
-            <div className="text-center space-y-4">
-              <div className="w-24 h-24 mx-auto bg-slate-800 rounded-full flex items-center justify-center animate-pulse">
-                <Eye className="w-12 h-12 text-gray-500" />
-              </div>
-              <h3 className="text-xl font-semibold text-gray-300">Loading video...</h3>
-            </div>
+      <div className="flex items-center justify-center min-h-screen bg-slate-900">
+        <div className="text-center space-y-4">
+          <div className="w-24 h-24 mx-auto bg-slate-800 rounded-full flex items-center justify-center animate-pulse">
+            <Clock className="w-12 h-12 text-gray-500" />
           </div>
-        </main>
+          <h3 className="text-xl font-semibold text-gray-300">Loading video...</h3>
+        </div>
       </div>
     );
   }
 
-  if (error || !video || isPrivateVideo) {
+  if (error) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950">
-        <Header isSignedIn={isSignedIn} onSignIn={handleSignIn} username={username} onSignOut={handleSignOut} />
-        <main className="container mx-auto px-6 py-8">
-          <button
-            onClick={() => navigate('/')}
-            className="flex items-center space-x-2 text-slate-400 hover:text-orange-400 transition-colors mb-6"
-          >
-            <ArrowLeft className="w-5 h-5" />
-            <span>Back to clips</span>
-          </button>
-          <div className="flex items-center justify-center py-20">
-            <div className="text-center space-y-6 max-w-md mx-auto">
-              {isPrivateVideo ? (
-                <>
-                  <div className="w-32 h-32 mx-auto bg-gradient-to-br from-red-900/50 to-red-800/50 rounded-full flex items-center justify-center border-2 border-red-500/30">
-                    <Lock className="w-16 h-16 text-red-400" />
-                  </div>
-                  <div className="space-y-3">
-                    <h3 className="text-2xl font-bold text-red-400">This clip is private</h3>
-                    <p className="text-slate-400 leading-relaxed">
-                      This video has been marked as private by the creator. Only authorized users can view this content.
-                    </p>
-                    <div className="pt-4">
-                      <button
-                        onClick={() => navigate('/')}
-                        className="px-6 py-3 bg-slate-800 hover:bg-slate-700 text-white rounded-lg transition-colors"
-                      >
-                        Browse Public Clips
-                      </button>
-                    </div>
-                  </div>
-                </>
-              ) : (
-                <>
-                  <div className="w-32 h-32 mx-auto bg-gradient-to-br from-slate-800 to-slate-700 rounded-full flex items-center justify-center border-2 border-slate-600">
-                    <Eye className="w-16 h-16 text-slate-400" />
-                  </div>
-                  <div className="space-y-3">
-                    <h3 className="text-2xl font-bold text-red-400">Video not found</h3>
-                    <p className="text-slate-400">{error || 'The video you\'re looking for doesn\'t exist or may have been removed.'}</p>
-                    <div className="pt-4">
-                      <button
-                        onClick={() => navigate('/')}
-                        className="px-6 py-3 bg-slate-800 hover:bg-slate-700 text-white rounded-lg transition-colors"
-                      >
-                        Back to Home
-                      </button>
-                    </div>
-                  </div>
-                </>
-              )}
-            </div>
-          </div>
-        </main>
+      <div className="flex items-center justify-center min-h-screen bg-slate-900">
+        <div className="text-center space-y-4">
+          <h3 className="text-xl font-semibold text-red-400">{error}</h3>
+          <p className="text-gray-500">Please check the URL or try again later.</p>
+        </div>
       </div>
     );
   }
 
-  const videoUrl = `https://data.extracted.lol${video.file_path}`;
+  if (!video) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-slate-900">
+        <div className="text-center space-y-4">
+          <h3 className="text-xl font-semibold text-gray-300">Video not found</h3>
+          <p className="text-gray-500">Please check the URL or try again later.</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950">
-      <Header isSignedIn={isSignedIn} onSignIn={handleSignIn} username={username} onSignOut={handleSignOut} />
-      
-      <main className="container mx-auto px-6 py-8">
-        <button
-          onClick={() => navigate('/')}
-          className="flex items-center space-x-2 text-slate-400 hover:text-orange-400 transition-colors mb-6"
-        >
-          <ArrowLeft className="w-5 h-5" />
-          <span>Back to clips</span>
-        </button>
+    <div className="min-h-screen bg-slate-900 font-inter">
+      <div className="container mx-auto px-6 py-8">
+        <h1 className="text-4xl font-bold text-white mb-4">{video.title}</h1>
+        
+        <div className="relative aspect-video bg-black rounded-xl overflow-hidden">
+          <ReactPlayer
+            url={`https://data.extracted.lol${video.file_path}`}
+            controls
+            width="100%"
+            height="100%"
+            style={{ position: 'absolute', top: 0, left: 0 }}
+          />
+        </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
-          <div className="lg:col-span-3 space-y-6">
-            {/* Video Player */}
-            <div className="aspect-video bg-slate-900 rounded-xl overflow-hidden border border-slate-800">
-              <video 
-                controls 
-                className="w-full h-full"
-                poster={video.thumbnail_path ? `https://data.extracted.lol${video.thumbnail_path}` : undefined}
-              >
-                <source src={videoUrl} type="video/mp4" />
-                Your browser does not support the video tag.
-              </video>
-            </div>
-
-            {/* Video Info */}
-            <div className="bg-slate-900 rounded-xl p-6 border border-slate-800">
-              <div className="flex items-start justify-between mb-4">
-                <div className="flex items-center space-x-3">
-                  <h1 className="text-2xl font-bold text-white">{video.title}</h1>
-                  {video.is_private && (
-                    <div className="bg-red-500/20 text-red-400 px-2 py-1 rounded text-xs flex items-center space-x-1">
-                      <Lock className="w-3 h-3" />
-                      <span>Private</span>
-                    </div>
-                  )}
-                </div>
-                
-                {/* Only show action buttons for authenticated users */}
-                {isSignedIn && (
-                  <div className="flex items-center space-x-2">
-                    <div className="relative">
-                      <button
-                        onClick={() => setShowShareMenu(!showShareMenu)}
-                        className="flex items-center space-x-2 px-4 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-lg transition-colors"
-                      >
-                        <Share2 className="w-4 h-4" />
-                        <span>Share</span>
-                      </button>
-                      
-                      {showShareMenu && (
-                        <div className="absolute right-0 top-12 bg-slate-800 border border-slate-700 rounded-lg py-2 z-10 min-w-[150px]">
-                          <button
-                            onClick={() => handleShare('copy')}
-                            className="w-full px-4 py-2 text-left text-sm text-slate-300 hover:bg-slate-700 hover:text-white flex items-center space-x-2"
-                          >
-                            <Copy className="w-4 h-4" />
-                            <span>Copy Link</span>
-                          </button>
-                          <button
-                            onClick={() => handleShare('twitter')}
-                            className="w-full px-4 py-2 text-left text-sm text-slate-300 hover:bg-slate-700 hover:text-white flex items-center space-x-2"
-                          >
-                            <ExternalLink className="w-4 h-4" />
-                            <span>Share on X</span>
-                          </button>
-                          <button
-                            onClick={() => handleShare('discord')}
-                            className="w-full px-4 py-2 text-left text-sm text-slate-300 hover:bg-slate-700 hover:text-white flex items-center space-x-2"
-                          >
-                            <Copy className="w-4 h-4" />
-                            <span>Copy for Discord</span>
-                          </button>
-                        </div>
-                      )}
-                    </div>
-                    
-                    <button 
-                      onClick={handleDownload}
-                      className="flex items-center space-x-2 px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded-lg transition-colors"
-                    >
-                      <Download className="w-4 h-4" />
-                      <span>Download</span>
-                    </button>
-                  </div>
-                )}
-              </div>
-
-              <div className="flex items-center space-x-6 text-sm text-slate-400 mb-4">
-                <div className="flex items-center space-x-1">
-                  <Eye className="w-4 h-4" />
-                  <span>{formatViews(video.views)} views</span>
-                </div>
-                
-                <div className="flex items-center space-x-1">
-                  <Calendar className="w-4 h-4" />
-                  <span>{formatDate(video.upload_date)}</span>
-                </div>
-              </div>
-
-              {video.subtitle && (
-                <p className="text-slate-300 leading-relaxed">{video.subtitle}</p>
-              )}
-            </div>
+        <div className="mt-4 flex items-center justify-between">
+          <div className="text-gray-400">
+            <span className="mr-2">{video.game}</span>
+            <span>Uploaded {formatDate(video.upload_date)}</span>
           </div>
-
-          {/* Sidebar */}
-          <div className="space-y-6">
-            <div className="bg-slate-900 rounded-xl p-6 border border-slate-800">
-              <h3 className="font-semibold text-white mb-4">Clip Details</h3>
-              
-              <div className="space-y-3">
-                <div className="flex justify-between">
-                  <span className="text-slate-400">Game</span>
-                  <span className="text-white">{video.game}</span>
-                </div>
-                
-                <div className="flex justify-between">
-                  <span className="text-slate-400">Duration</span>
-                  <span className="text-white">{video.duration}</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Only show quick actions for Jay (authenticated user) */}
-            {isSignedIn && username === "Jay" && (
-              <div className="bg-slate-900 rounded-xl p-6 border border-slate-800">
-                <h3 className="font-semibold text-white mb-4">Quick Actions</h3>
-                
-                <div className="space-y-2">
-                  <button className="w-full text-left px-3 py-2 text-slate-300 hover:bg-slate-800 hover:text-white rounded transition-colors">
-                    Edit Title
-                  </button>
-                  <button className="w-full text-left px-3 py-2 text-slate-300 hover:bg-slate-800 hover:text-white rounded transition-colors">
-                    Update Description
-                  </button>
-                  
-                  <AlertDialog>
-                    <AlertDialogTrigger asChild>
-                      <button className="w-full text-left px-3 py-2 text-red-400 hover:bg-slate-800 hover:text-red-300 rounded transition-colors">
-                        Delete Clip
-                      </button>
-                    </AlertDialogTrigger>
-                    <AlertDialogContent className="bg-slate-800 border-slate-700">
-                      <AlertDialogHeader>
-                        <AlertDialogTitle className="text-white">Are you absolutely sure?</AlertDialogTitle>
-                        <AlertDialogDescription className="text-slate-300">
-                          This action cannot be undone. This will permanently delete your clip
-                          and remove the video file from our servers.
-                        </AlertDialogDescription>
-                      </AlertDialogHeader>
-                      <AlertDialogFooter>
-                        <AlertDialogCancel className="bg-slate-700 border-slate-600 text-white hover:bg-slate-600">
-                          Cancel
-                        </AlertDialogCancel>
-                        <AlertDialogAction
-                          onClick={handleDelete}
-                          disabled={isDeleting}
-                          className="bg-red-600 hover:bg-red-700 text-white"
-                        >
-                          {isDeleting ? (
-                            <>
-                              <Trash2 className="w-4 h-4 mr-2 animate-spin" />
-                              Deleting...
-                            </>
-                          ) : (
-                            <>
-                              <Trash2 className="w-4 h-4 mr-2" />
-                              Delete
-                            </>
-                          )}
-                        </AlertDialogAction>
-                      </AlertDialogFooter>
-                    </AlertDialogContent>
-                  </AlertDialog>
-                </div>
-              </div>
-            )}
+          <div className="text-gray-400">
+            <span>{formatViews(video.views)} views</span>
           </div>
         </div>
-      </main>
+      </div>
     </div>
   );
 };

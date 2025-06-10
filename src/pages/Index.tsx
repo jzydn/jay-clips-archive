@@ -2,10 +2,47 @@
 import { useState, useEffect } from "react";
 import { Header } from "@/components/Header";
 import { Dashboard } from "@/components/Dashboard";
+import { RecentClips } from "@/components/RecentClips";
 
 const Index = () => {
   const [isSignedIn, setIsSignedIn] = useState(false);
   const [username, setUsername] = useState("");
+
+  // Add meta tags for Discord embedding
+  useEffect(() => {
+    // Set meta tags for better Discord embedding
+    const updateMetaTags = () => {
+      // Update or create meta tags
+      const metaTags = [
+        { property: 'og:title', content: "netsink's personal gallery" },
+        { property: 'og:description', content: "Gaming clips and highlights from netsink" },
+        { property: 'og:type', content: 'website' },
+        { property: 'og:url', content: window.location.href },
+        { property: 'og:image', content: `${window.location.origin}/placeholder.svg` },
+        { name: 'twitter:card', content: 'summary_large_image' },
+        { name: 'twitter:title', content: "netsink's personal gallery" },
+        { name: 'twitter:description', content: "Gaming clips and highlights from netsink" },
+      ];
+
+      metaTags.forEach(tag => {
+        const existing = document.querySelector(`meta[${tag.property ? 'property' : 'name'}="${tag.property || tag.name}"]`);
+        if (existing) {
+          existing.setAttribute('content', tag.content);
+        } else {
+          const meta = document.createElement('meta');
+          if (tag.property) {
+            meta.setAttribute('property', tag.property);
+          } else {
+            meta.setAttribute('name', tag.name);
+          }
+          meta.setAttribute('content', tag.content);
+          document.head.appendChild(meta);
+        }
+      });
+    };
+
+    updateMetaTags();
+  }, []);
 
   // Check for stored login on component mount
   useEffect(() => {
@@ -19,7 +56,6 @@ const Index = () => {
   const handleSignIn = (user: string) => {
     setIsSignedIn(true);
     setUsername(user);
-    // Store login in localStorage for persistence
     localStorage.setItem('loggedInUser', user);
   };
 
@@ -33,8 +69,8 @@ const Index = () => {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 relative font-inter">
         <Header isSignedIn={isSignedIn} onSignIn={handleSignIn} />
-        <div className="flex items-center justify-center min-h-[80vh] relative z-10">
-          <div className="text-center space-y-8">
+        <div className="container mx-auto px-6 py-8">
+          <div className="text-center space-y-8 mb-12">
             <div className="space-y-4">
               <h1 className="text-6xl font-bold bg-gradient-to-r from-white via-cyan-200 to-blue-200 bg-clip-text text-transparent drop-shadow-lg">
                 netsink's personal gallery
@@ -57,8 +93,11 @@ const Index = () => {
                 </div>
               </div>
             </div>
-            <p className="text-gray-400 text-lg">Please login to view the clips</p>
+            <p className="text-gray-400 text-lg">Please login to view all clips</p>
           </div>
+          
+          {/* Recent clips section */}
+          <RecentClips />
         </div>
       </div>
     );

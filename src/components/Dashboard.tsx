@@ -9,7 +9,6 @@ interface DashboardProps {
   username: string;
 }
 
-// Updated API endpoint to use NGINX
 const API_BASE_URL = "https://data.extracted.lol/api";
 
 export const Dashboard = ({ username }: DashboardProps) => {
@@ -22,7 +21,16 @@ export const Dashboard = ({ username }: DashboardProps) => {
     const fetchVideos = async () => {
       try {
         setIsLoading(true);
-        const response = await fetch(`${API_BASE_URL}/videos/user/1`); // Hardcoded for Jay for now
+        const headers: Record<string, string> = {};
+        
+        // Add Jay identifier for private video access
+        if (username === "Jay") {
+          headers['X-User-Type'] = 'jay';
+        }
+        
+        const response = await fetch(`${API_BASE_URL}/videos/user/1`, {
+          headers
+        });
         
         if (!response.ok) {
           throw new Error('Failed to fetch videos');
@@ -33,7 +41,7 @@ export const Dashboard = ({ username }: DashboardProps) => {
         console.log("Fetched videos from MySQL:", data.videos);
       } catch (error) {
         console.error("Error fetching videos:", error);
-        setVideos([]); // Fall back to empty array
+        setVideos([]);
       } finally {
         setIsLoading(false);
       }
@@ -42,7 +50,7 @@ export const Dashboard = ({ username }: DashboardProps) => {
     if (activeTab === "clips") {
       fetchVideos();
     }
-  }, [activeTab]);
+  }, [activeTab, username]);
 
   // Handle video updates from child components
   const handleVideoUpdate = (videoId: string | number, updates: Partial<any>) => {

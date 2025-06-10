@@ -1,3 +1,4 @@
+
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
@@ -58,29 +59,65 @@ app.use(helmet({
   crossOriginResourcePolicy: { policy: "cross-origin" }
 }));
 
+// Allowed domains for API access
+const allowedDomains = [
+  'http://localhost:5173', 
+  'http://localhost:3000', 
+  'http://localhost:8081', 
+  'http://46.244.96.25:8081',
+  'https://vids.extracted.lol',
+  /^https:\/\/.*\.lovable\.app$/,
+  /^https:\/\/.*\.lovableproject\.com$/
+];
+
+// Domain restriction middleware
+app.use('/api', (req, res, next) => {
+  const origin = req.get('Origin') || req.get('Referer');
+  
+  if (!origin) {
+    return res.status(403).json({ 
+      success: false, 
+      message: 'Direct API access not allowed' 
+    });
+  }
+
+  const isAllowed = allowedDomains.some(domain => {
+    if (typeof domain === 'string') {
+      return origin.startsWith(domain);
+    }
+    return domain.test(origin);
+  });
+
+  if (!isAllowed) {
+    return res.status(403).json({ 
+      success: false, 
+      message: 'Unauthorized domain' 
+    });
+  }
+
+  next();
+});
+
 // Enhanced CORS configuration
 app.use(cors({
-  origin: [
-    'http://localhost:5173', 
-    'http://localhost:3000', 
-    'http://localhost:8081', 
-    'http://46.244.96.25:8081',
-    'https://vids.extracted.lol',  // Add the production domain
-    /^https:\/\/.*\.lovable\.app$/,  // Allow all Lovable preview domains
-    /^https:\/\/.*\.lovableproject\.com$/ // Alternative Lovable domains
-  ],
+  origin: allowedDomains,
   credentials: true,
-  methods: ['GET', 'POST', 'DELETE', 'HEAD', 'OPTIONS', 'PATCH'],  // Add PATCH method
+  methods: ['GET', 'POST', 'DELETE', 'HEAD', 'OPTIONS', 'PATCH'],
   allowedHeaders: ['Content-Type', 'Authorization', 'Range'],
   exposedHeaders: ['Content-Range', 'Content-Length', 'Accept-Ranges']
 }));
 
-// Rate limiting
-const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 100
+// Rate limiting with exemption for your domain
+const createRateLimiter = (windowMs, max) => rateLimit({
+  windowMs,
+  max,
+  skip: (req) => {
+    const origin = req.get('Origin') || req.get('Referer');
+    return origin && origin.includes('vids.extracted.lol');
+  }
 });
-app.use(limiter);
+
+app.use('/api', createRateLimiter(15 * 60 * 1000, 1000)); // Higher limit, bypass for your domain
 
 // Body parsing middleware
 app.use(express.json());
@@ -88,13 +125,11 @@ app.use(express.urlencoded({ extended: true }));
 
 // Enhanced static file serving with proper video streaming headers
 app.use('/uploads', (req, res, next) => {
-  // Set CORS headers for video files
   res.header('Access-Control-Allow-Origin', '*');
   res.header('Access-Control-Allow-Methods', 'GET, HEAD, OPTIONS');
   res.header('Access-Control-Allow-Headers', 'Range');
   res.header('Access-Control-Expose-Headers', 'Content-Range, Content-Length, Accept-Ranges');
   
-  // Handle preflight requests
   if (req.method === 'OPTIONS') {
     return res.sendStatus(200);
   }
@@ -120,15 +155,13 @@ app.post('/api/videos/upload', upload.single('video'), async (req, res) => {
     const filename = req.file.filename;
     const filePath = `/uploads/videos/${filename}`;
     
-    // Generate random hash for the video URL
     const videoHash = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
 
-    // Insert into database with hash and default private status
     const connection = await mysql.createConnection(dbConfig);
     
     const [result] = await connection.execute(
       'INSERT INTO videos (title, subtitle, game, duration, file_path, user_id, upload_date, video_hash, is_private) VALUES (?, ?, ?, ?, ?, ?, NOW(), ?, ?)',
-      [title, subtitle || '', game, duration, filePath, userId || 1, videoHash, true] // Default to private
+      [title, subtitle || '', game, duration, filePath, userId || 1, videoHash, true]
     );
 
     await connection.end();
@@ -166,10 +199,12 @@ app.post('/api/videos/upload', upload.single('video'), async (req, res) => {
   }
 });
 
-// Get video by hash endpoint
+// Get video by hash endpoint - updated for Jay's access to private videos
 app.get('/api/videos/hash/:hash', async (req, res) => {
   try {
     const videoHash = req.params.hash;
+    const isJay = req.get('X-User-Type') === 'jay' || req.get('Origin')?.includes('vids.extracted.lol');
+    
     const connection = await mysql.createConnection(dbConfig);
     
     const [videos] = await connection.execute(
@@ -187,6 +222,14 @@ app.get('/api/videos/hash/:hash', async (req, res) => {
     }
 
     const video = videos[0];
+
+    // Check if video is private and user is not Jay
+    if (video.is_private && !isJay) {
+      return res.status(403).json({
+        success: false,
+        message: 'This video is private'
+      });
+    }
 
     res.json({
       success: true,
@@ -245,7 +288,6 @@ app.delete('/api/videos/:videoId', async (req, res) => {
     const videoId = req.params.videoId;
     const connection = await mysql.createConnection(dbConfig);
     
-    // First get the video file path
     const [videos] = await connection.execute(
       'SELECT file_path FROM videos WHERE id = ?',
       [videoId]
@@ -261,7 +303,6 @@ app.delete('/api/videos/:videoId', async (req, res) => {
 
     const video = videos[0];
     
-    // Delete from database
     const [result] = await connection.execute(
       'DELETE FROM videos WHERE id = ?',
       [videoId]
@@ -269,7 +310,6 @@ app.delete('/api/videos/:videoId', async (req, res) => {
 
     await connection.end();
 
-    // Delete physical file
     if (video.file_path) {
       const fullPath = path.join(__dirname, video.file_path);
       if (fs.existsSync(fullPath)) {
@@ -294,15 +334,23 @@ app.delete('/api/videos/:videoId', async (req, res) => {
   }
 });
 
-// Get user videos
+// Get user videos - updated for Jay's access
 app.get('/api/videos/user/:userId', async (req, res) => {
   try {
+    const isJay = req.get('X-User-Type') === 'jay' || req.get('Origin')?.includes('vids.extracted.lol');
     const connection = await mysql.createConnection(dbConfig);
     
-    const [rows] = await connection.execute(
-      'SELECT * FROM videos WHERE user_id = ? ORDER BY upload_date DESC',
-      [req.params.userId]
-    );
+    let query = 'SELECT * FROM videos WHERE user_id = ?';
+    const params = [req.params.userId];
+    
+    // If not Jay, only show public videos
+    if (!isJay) {
+      query += ' AND is_private = FALSE';
+    }
+    
+    query += ' ORDER BY upload_date DESC';
+    
+    const [rows] = await connection.execute(query, params);
 
     await connection.end();
 
@@ -316,6 +364,31 @@ app.get('/api/videos/user/:userId', async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Failed to fetch videos: ' + error.message
+    });
+  }
+});
+
+// Get recent public videos for homepage
+app.get('/api/videos/recent', async (req, res) => {
+  try {
+    const connection = await mysql.createConnection(dbConfig);
+    
+    const [rows] = await connection.execute(
+      'SELECT * FROM videos WHERE is_private = FALSE ORDER BY upload_date DESC LIMIT 4'
+    );
+
+    await connection.end();
+
+    res.json({
+      success: true,
+      videos: rows
+    });
+
+  } catch (error) {
+    console.error('Database error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch recent videos: ' + error.message
     });
   }
 });
