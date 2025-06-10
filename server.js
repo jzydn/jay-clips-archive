@@ -103,31 +103,23 @@ app.use(limiter);
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Enhanced static file serving with proper video streaming headers and path mapping
-app.use('/uploads', express.static(path.join(__dirname, 'uploads'), {
-  setHeaders: (res, filePath) => {
-    // Set CORS headers for video files
-    res.header('Access-Control-Allow-Origin', '*');
-    res.header('Access-Control-Allow-Methods', 'GET, HEAD, OPTIONS');
-    res.header('Access-Control-Allow-Headers', 'Range');
-    res.header('Access-Control-Expose-Headers', 'Content-Range, Content-Length, Accept-Ranges');
-    
-    if (filePath.endsWith('.mp4') || filePath.endsWith('.mov') || filePath.endsWith('.avi') || filePath.endsWith('.webm')) {
-      res.setHeader('Accept-Ranges', 'bytes');
-      res.setHeader('Content-Type', 'video/mp4');
-    }
+// Enhanced static file serving with proper video streaming headers
+app.use('/uploads', (req, res, next) => {
+  // Set CORS headers for video files
+  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Methods', 'GET, HEAD, OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Range');
+  res.header('Access-Control-Expose-Headers', 'Content-Range, Content-Length, Accept-Ranges');
+  
+  // Handle preflight requests
+  if (req.method === 'OPTIONS') {
+    return res.sendStatus(200);
   }
-}));
-
-// Fallback for old database paths - handle jay-clips-archive to extractedclips mapping
-app.use('/uploads/videos/jay-clips-archive', express.static(path.join(__dirname, 'uploads/videos/extractedclips'), {
-  setHeaders: (res, filePath) => {
-    res.header('Access-Control-Allow-Origin', '*');
-    res.header('Access-Control-Allow-Methods', 'GET, HEAD, OPTIONS');
-    res.header('Access-Control-Allow-Headers', 'Range');
-    res.header('Access-Control-Expose-Headers', 'Content-Range, Content-Length, Accept-Ranges');
-    
-    if (filePath.endsWith('.mp4') || filePath.endsWith('.mov') || filePath.endsWith('.avi') || filePath.endsWith('.webm')) {
+  
+  next();
+}, express.static(path.join(__dirname, 'uploads'), {
+  setHeaders: (res, path) => {
+    if (path.endsWith('.mp4') || path.endsWith('.mov') || path.endsWith('.avi') || path.endsWith('.webm')) {
       res.setHeader('Accept-Ranges', 'bytes');
       res.setHeader('Content-Type', 'video/mp4');
     }
