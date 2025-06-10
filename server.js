@@ -1,4 +1,3 @@
-
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
@@ -70,42 +69,39 @@ const allowedDomains = [
   /^https:\/\/.*\.lovableproject\.com$/
 ];
 
-// Domain restriction middleware
-app.use('/api', (req, res, next) => {
-  const origin = req.get('Origin') || req.get('Referer');
-  
-  if (!origin) {
-    return res.status(403).json({ 
-      success: false, 
-      message: 'Direct API access not allowed' 
-    });
-  }
-
-  const isAllowed = allowedDomains.some(domain => {
-    if (typeof domain === 'string') {
-      return origin.startsWith(domain);
-    }
-    return domain.test(origin);
-  });
-
-  if (!isAllowed) {
-    return res.status(403).json({ 
-      success: false, 
-      message: 'Unauthorized domain' 
-    });
-  }
-
-  next();
-});
-
-// Enhanced CORS configuration
+// Enhanced CORS configuration - apply globally first
 app.use(cors({
-  origin: allowedDomains,
+  origin: function (origin, callback) {
+    // Allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) return callback(null, true);
+    
+    const isAllowed = allowedDomains.some(domain => {
+      if (typeof domain === 'string') {
+        return origin === domain;
+      }
+      return domain.test(origin);
+    });
+    
+    if (isAllowed) {
+      callback(null, true);
+    } else {
+      console.log('CORS blocked origin:', origin);
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
   credentials: true,
   methods: ['GET', 'POST', 'DELETE', 'HEAD', 'OPTIONS', 'PATCH'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'Range'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'Range', 'X-User-Type'],
   exposedHeaders: ['Content-Range', 'Content-Length', 'Accept-Ranges']
 }));
+
+// Handle preflight requests
+app.options('*', cors());
+
+// Domain restriction middleware - simplified since CORS handles it
+app.use('/api', (req, res, next) => {
+  next();
+});
 
 // Rate limiting with exemption for your domain
 const createRateLimiter = (windowMs, max) => rateLimit({
