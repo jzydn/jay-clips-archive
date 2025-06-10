@@ -14,6 +14,9 @@ const __dirname = path.dirname(__filename);
 const app = express();
 const PORT = process.env.PORT || 8086;
 
+// Trust proxy for rate limiting (fixes the X-Forwarded-For error)
+app.set('trust proxy', 1);
+
 // Create MySQL connection
 const dbConfig = {
   host: 'localhost',
@@ -58,20 +61,20 @@ app.use(helmet({
   crossOriginResourcePolicy: { policy: "cross-origin" }
 }));
 
-// Enhanced CORS configuration
+// Enhanced CORS configuration - added X-User-Type to allowed headers
 app.use(cors({
   origin: [
     'http://localhost:5173', 
     'http://localhost:3000', 
     'http://localhost:8081', 
     'http://46.244.96.25:8081',
-    'https://vids.extracted.lol',  // Add the production domain
-    /^https:\/\/.*\.lovable\.app$/,  // Allow all Lovable preview domains
-    /^https:\/\/.*\.lovableproject\.com$/ // Alternative Lovable domains
+    'https://vids.extracted.lol',
+    /^https:\/\/.*\.lovable\.app$/,
+    /^https:\/\/.*\.lovableproject\.com$/
   ],
   credentials: true,
-  methods: ['GET', 'POST', 'DELETE', 'HEAD', 'OPTIONS', 'PATCH'],  // Add PATCH method
-  allowedHeaders: ['Content-Type', 'Authorization', 'Range'],
+  methods: ['GET', 'POST', 'DELETE', 'HEAD', 'OPTIONS', 'PATCH'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'Range', 'X-User-Type'],
   exposedHeaders: ['Content-Range', 'Content-Length', 'Accept-Ranges']
 }));
 
@@ -108,6 +111,31 @@ app.use('/uploads', (req, res, next) => {
     }
   }
 }));
+
+// NEW ENDPOINT: Get recent videos (public videos only)
+app.get('/api/videos/recent', async (req, res) => {
+  try {
+    const connection = await mysql.createConnection(dbConfig);
+    
+    const [rows] = await connection.execute(
+      'SELECT * FROM videos WHERE is_private = FALSE ORDER BY upload_date DESC LIMIT 20'
+    );
+
+    await connection.end();
+
+    res.json({
+      success: true,
+      videos: rows
+    });
+
+  } catch (error) {
+    console.error('Database error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch recent videos: ' + error.message
+    });
+  }
+});
 
 // Video upload endpoint
 app.post('/api/videos/upload', upload.single('video'), async (req, res) => {
