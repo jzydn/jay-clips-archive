@@ -1,3 +1,4 @@
+
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
@@ -79,7 +80,7 @@ app.use(cors({
   exposedHeaders: ['Content-Range', 'Content-Length', 'Accept-Ranges']
 }));
 
-// More lenient rate limiting with better proxy handling
+// Fixed rate limiting configuration
 const limiter = rateLimit({
   windowMs: 5 * 60 * 1000, // 5 minutes
   max: 1000, // requests per window
@@ -91,7 +92,8 @@ const limiter = rateLimit({
            origin.includes('127.0.0.1') ||
            origin.includes('46.244.96.25');
   },
-  trustProxy: true, // Add this to handle proxy correctly
+  standardHeaders: true,
+  legacyHeaders: false,
   message: {
     error: 'Too many requests from this IP, please try again later.',
     retryAfter: '5 minutes'
