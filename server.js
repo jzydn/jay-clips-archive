@@ -118,13 +118,16 @@ app.post('/api/videos/upload', upload.single('video'), async (req, res) => {
     const { title, subtitle, game, duration, userId } = req.body;
     const filename = req.file.filename;
     const filePath = `/uploads/videos/${filename}`;
+    
+    // Generate random hash for the video URL
+    const videoHash = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
 
-    // Insert into database
+    // Insert into database with hash and default private status
     const connection = await mysql.createConnection(dbConfig);
     
     const [result] = await connection.execute(
-      'INSERT INTO videos (title, subtitle, game, duration, file_path, user_id, upload_date) VALUES (?, ?, ?, ?, ?, ?, NOW())',
-      [title, subtitle || '', game, duration, filePath, userId || 1]
+      'INSERT INTO videos (title, subtitle, game, duration, file_path, user_id, upload_date, video_hash, is_private) VALUES (?, ?, ?, ?, ?, ?, NOW(), ?, ?)',
+      [title, subtitle || '', game, duration, filePath, userId || 1, videoHash, true] // Default to private
     );
 
     await connection.end();
@@ -133,7 +136,8 @@ app.post('/api/videos/upload', upload.single('video'), async (req, res) => {
       id: result.insertId,
       title,
       filename,
-      filePath
+      filePath,
+      hash: videoHash
     });
 
     res.json({
@@ -146,7 +150,9 @@ app.post('/api/videos/upload', upload.single('video'), async (req, res) => {
         game,
         duration,
         file_path: filePath,
-        upload_date: new Date().toISOString()
+        upload_date: new Date().toISOString(),
+        video_hash: videoHash,
+        is_private: true
       }
     });
 
@@ -155,6 +161,79 @@ app.post('/api/videos/upload', upload.single('video'), async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Upload failed: ' + error.message
+    });
+  }
+});
+
+// Get video by hash endpoint
+app.get('/api/videos/hash/:hash', async (req, res) => {
+  try {
+    const videoHash = req.params.hash;
+    const connection = await mysql.createConnection(dbConfig);
+    
+    const [videos] = await connection.execute(
+      'SELECT * FROM videos WHERE video_hash = ?',
+      [videoHash]
+    );
+
+    await connection.end();
+
+    if (videos.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'Video not found'
+      });
+    }
+
+    const video = videos[0];
+
+    res.json({
+      success: true,
+      video: video
+    });
+
+  } catch (error) {
+    console.error('Database error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch video: ' + error.message
+    });
+  }
+});
+
+// Toggle video privacy endpoint
+app.patch('/api/videos/:videoId/privacy', async (req, res) => {
+  try {
+    const videoId = req.params.videoId;
+    const { isPrivate } = req.body;
+    const connection = await mysql.createConnection(dbConfig);
+    
+    const [result] = await connection.execute(
+      'UPDATE videos SET is_private = ? WHERE id = ?',
+      [isPrivate, videoId]
+    );
+
+    await connection.end();
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'Video not found'
+      });
+    }
+
+    console.log('Video privacy updated:', { videoId, isPrivate });
+
+    res.json({
+      success: true,
+      message: 'Video privacy updated successfully'
+    });
+
+  } catch (error) {
+    console.error('Privacy update error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to update privacy: ' + error.message
     });
   }
 });

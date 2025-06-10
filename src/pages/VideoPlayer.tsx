@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { ArrowLeft, Share2, Download, Eye, Calendar, Copy, ExternalLink, Trash2 } from "lucide-react";
+import { ArrowLeft, Share2, Download, Eye, Calendar, Copy, ExternalLink, Trash2, Lock } from "lucide-react";
 import { Header } from "@/components/Header";
 import { buildApiUrl } from "@/config/api";
 import {
@@ -26,16 +26,19 @@ interface Video {
   upload_date: string;
   views: number;
   share_token?: string;
+  video_hash?: string;
+  is_private?: boolean;
 }
 
 const VideoPlayer = () => {
-  const { id } = useParams();
+  const { id } = useParams(); // This could be either hash or ID
   const navigate = useNavigate();
   const [showShareMenu, setShowShareMenu] = useState(false);
   const [video, setVideo] = useState<Video | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isPrivateVideo, setIsPrivateVideo] = useState(false);
 
   // Check authentication status
   const [isSignedIn, setIsSignedIn] = useState(false);
@@ -117,27 +120,37 @@ const VideoPlayer = () => {
       
       try {
         setIsLoading(true);
-        // Fetch all user videos and find the specific one
-        const response = await fetch(buildApiUrl('/videos/user/1'));
         
-        if (!response.ok) {
-          throw new Error('Failed to fetch videos');
+        // Try to fetch by hash first, then fall back to ID
+        let response = await fetch(buildApiUrl('/videos/hash', id));
+        let foundVideo = null;
+        
+        if (response.ok) {
+          const data = await response.json();
+          foundVideo = data.video;
+        } else {
+          // Fall back to fetching all user videos and finding by ID
+          response = await fetch(buildApiUrl('/videos/user/1'));
+          if (response.ok) {
+            const data = await response.json();
+            foundVideo = data.videos.find((v: Video) => v.id.toString() === id);
+          }
         }
-        
-        const data = await response.json();
-        const foundVideo = data.videos.find((v: Video) => v.id.toString() === id);
         
         if (!foundVideo) {
           throw new Error('Video not found');
+        }
+
+        // Check if video is private and user is not Jay
+        if (foundVideo.is_private && username !== "Jay") {
+          setIsPrivateVideo(true);
+          setError('This clip is private');
+          return;
         }
         
         setVideo(foundVideo);
         console.log("Fetched video from MySQL:", foundVideo);
 
-        // Increment view count (you can create this endpoint later)
-        // await fetch(buildApiUrl('/videos/views', id), {
-        //   method: 'POST',
-        // });
       } catch (error) {
         console.error("Error fetching video:", error);
         setError(error instanceof Error ? error.message : 'Unknown error');
@@ -147,7 +160,7 @@ const VideoPlayer = () => {
     };
 
     fetchVideo();
-  }, [id]);
+  }, [id, username]);
 
   const formatViews = (views: number) => {
     if (views >= 1000) {
@@ -253,7 +266,7 @@ const VideoPlayer = () => {
     );
   }
 
-  if (error || !video) {
+  if (error || !video || isPrivateVideo) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950">
         <Header isSignedIn={isSignedIn} onSignIn={handleSignIn} username={username} onSignOut={handleSignOut} />
@@ -267,8 +280,20 @@ const VideoPlayer = () => {
           </button>
           <div className="flex items-center justify-center py-20">
             <div className="text-center space-y-4">
-              <h3 className="text-xl font-semibold text-red-400">Video not found</h3>
-              <p className="text-gray-500">{error || 'The video you\'re looking for doesn\'t exist.'}</p>
+              {isPrivateVideo ? (
+                <>
+                  <div className="w-24 h-24 mx-auto bg-red-900 rounded-full flex items-center justify-center">
+                    <Lock className="w-12 h-12 text-red-400" />
+                  </div>
+                  <h3 className="text-xl font-semibold text-red-400">This clip is private</h3>
+                  <p className="text-gray-500">Only the owner can view this video.</p>
+                </>
+              ) : (
+                <>
+                  <h3 className="text-xl font-semibold text-red-400">Video not found</h3>
+                  <p className="text-gray-500">{error || 'The video you\'re looking for doesn\'t exist.'}</p>
+                </>
+              )}
             </div>
           </div>
         </main>
@@ -308,7 +333,15 @@ const VideoPlayer = () => {
             {/* Video Info */}
             <div className="bg-slate-900 rounded-xl p-6 border border-slate-800">
               <div className="flex items-start justify-between mb-4">
-                <h1 className="text-2xl font-bold text-white">{video.title}</h1>
+                <div className="flex items-center space-x-3">
+                  <h1 className="text-2xl font-bold text-white">{video.title}</h1>
+                  {video.is_private && (
+                    <div className="bg-red-500/20 text-red-400 px-2 py-1 rounded text-xs flex items-center space-x-1">
+                      <Lock className="w-3 h-3" />
+                      <span>Private</span>
+                    </div>
+                  )}
+                </div>
                 
                 {/* Only show action buttons for authenticated users */}
                 {isSignedIn && (

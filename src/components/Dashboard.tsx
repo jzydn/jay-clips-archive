@@ -44,6 +44,15 @@ export const Dashboard = ({ username }: DashboardProps) => {
     }
   }, [activeTab]);
 
+  // Handle video updates from child components
+  const handleVideoUpdate = (videoId: string | number, updates: Partial<any>) => {
+    setVideos(prevVideos => 
+      prevVideos.map(video => 
+        video.id === videoId ? { ...video, ...updates } : video
+      )
+    );
+  };
+
   return (
     <div className="container mx-auto px-6 py-8">
       <div className="mb-8">
@@ -100,6 +109,7 @@ export const Dashboard = ({ username }: DashboardProps) => {
                   video={video} 
                   isAuthenticated={true}
                   username={username}
+                  onVideoUpdate={handleVideoUpdate}
                 />
               ))}
             </div>

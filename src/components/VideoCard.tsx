@@ -2,6 +2,7 @@
 import { useState, useRef, useEffect } from "react";
 import { Play, Eye, Calendar, Share2, ExternalLink } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { PrivacyToggle } from "./PrivacyToggle";
 
 interface Video {
   id: string | number;
@@ -13,26 +14,35 @@ interface Video {
   game: string;
   file_path?: string;
   share_token?: string;
+  video_hash?: string;
+  is_private?: boolean;
 }
 
 interface VideoCardProps {
   video: Video;
   isAuthenticated?: boolean;
   username?: string;
+  onVideoUpdate?: (videoId: string | number, updates: Partial<Video>) => void;
 }
 
-export const VideoCard = ({ video, isAuthenticated = false, username }: VideoCardProps) => {
+export const VideoCard = ({ video, isAuthenticated = false, username, onVideoUpdate }: VideoCardProps) => {
   const [isHovered, setIsHovered] = useState(false);
   const [showShareMenu, setShowShareMenu] = useState(false);
   const [thumbnailSrc, setThumbnailSrc] = useState("/placeholder.svg");
+  const [currentVideo, setCurrentVideo] = useState(video);
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const navigate = useNavigate();
 
+  // Update local state when video prop changes
+  useEffect(() => {
+    setCurrentVideo(video);
+  }, [video]);
+
   // Generate thumbnail from video
   useEffect(() => {
-    if (video.file_path) {
-      const videoUrl = `https://data.extracted.lol${video.file_path}`;
+    if (currentVideo.file_path) {
+      const videoUrl = `https://data.extracted.lol${currentVideo.file_path}`;
       
       // Create a temporary video element to capture thumbnail
       const tempVideo = document.createElement('video');
@@ -72,7 +82,7 @@ export const VideoCard = ({ video, isAuthenticated = false, username }: VideoCar
         }
       };
     }
-  }, [video.file_path]);
+  }, [currentVideo.file_path]);
 
   const formatViews = (views: number) => {
     if (views >= 1000) {
@@ -89,10 +99,17 @@ export const VideoCard = ({ video, isAuthenticated = false, username }: VideoCar
     });
   };
 
+  const handleVideoClick = () => {
+    // Use hash-based URL if available, otherwise fall back to ID
+    const videoPath = currentVideo.video_hash ? `/video/${currentVideo.video_hash}` : `/video/${currentVideo.id}`;
+    navigate(videoPath);
+  };
+
   const handleShare = (platform: string) => {
-    const url = `${window.location.origin}/video/${video.id}`;
-    const embedUrl = `${window.location.origin}/embed/${video.id}`;
-    const text = `Check out this clip: ${video.title}`;
+    const videoPath = currentVideo.video_hash ? `/video/${currentVideo.video_hash}` : `/video/${currentVideo.id}`;
+    const url = `${window.location.origin}${videoPath}`;
+    const embedUrl = `${window.location.origin}/embed/${currentVideo.video_hash || currentVideo.id}`;
+    const text = `Check out this clip: ${currentVideo.title}`;
     
     switch (platform) {
       case 'copy':
@@ -114,6 +131,16 @@ export const VideoCard = ({ video, isAuthenticated = false, username }: VideoCar
     setShowShareMenu(false);
   };
 
+  const handlePrivacyChange = (isPrivate: boolean) => {
+    const updatedVideo = { ...currentVideo, is_private: isPrivate };
+    setCurrentVideo(updatedVideo);
+    
+    // Notify parent component of the update
+    if (onVideoUpdate) {
+      onVideoUpdate(currentVideo.id, { is_private: isPrivate });
+    }
+  };
+
   return (
     <div 
       className="bg-slate-900 rounded-xl overflow-hidden border border-slate-800 hover:border-orange-500/50 transition-all duration-300 transform hover:scale-[1.02] hover:shadow-xl hover:shadow-orange-500/10 group"
@@ -122,19 +149,26 @@ export const VideoCard = ({ video, isAuthenticated = false, username }: VideoCar
     >
       <div 
         className="relative aspect-video bg-slate-800 cursor-pointer overflow-hidden"
-        onClick={() => navigate(`/video/${video.id}`)}
+        onClick={handleVideoClick}
       >
         <img 
           src={thumbnailSrc} 
-          alt={video.title}
+          alt={currentVideo.title}
           className="w-full h-full object-cover"
           onError={() => setThumbnailSrc("/placeholder.svg")}
         />
         
         <div className="absolute inset-0 bg-black/20 group-hover:bg-black/40 transition-all duration-300" />
         
+        {/* Privacy indicator */}
+        {currentVideo.is_private && (
+          <div className="absolute top-2 left-2 bg-red-500/80 text-white text-xs px-2 py-1 rounded flex items-center space-x-1">
+            <span>Private</span>
+          </div>
+        )}
+        
         <div className="absolute bottom-2 right-2 bg-black/80 text-white text-xs px-2 py-1 rounded">
-          {video.duration}
+          {currentVideo.duration}
         </div>
         
         {isHovered && (
@@ -150,9 +184,9 @@ export const VideoCard = ({ video, isAuthenticated = false, username }: VideoCar
         <div className="flex items-start justify-between gap-2">
           <h3 
             className="font-semibold text-white line-clamp-2 cursor-pointer hover:text-orange-400 transition-colors"
-            onClick={() => navigate(`/video/${video.id}`)}
+            onClick={handleVideoClick}
           >
-            {video.title}
+            {currentVideo.title}
           </h3>
           
           {/* Only show share button for authenticated users */}
@@ -197,18 +231,29 @@ export const VideoCard = ({ video, isAuthenticated = false, username }: VideoCar
           )}
         </div>
 
+        {/* Privacy toggle for authenticated users */}
+        {isAuthenticated && username === "Jay" && (
+          <div className="flex justify-start">
+            <PrivacyToggle
+              videoId={currentVideo.id}
+              isPrivate={currentVideo.is_private || false}
+              onPrivacyChange={handlePrivacyChange}
+            />
+          </div>
+        )}
+
         <div className="flex items-center justify-between text-sm text-slate-400">
-          <span className="bg-orange-500/20 text-orange-400 px-2 py-1 rounded text-xs">{video.game}</span>
+          <span className="bg-orange-500/20 text-orange-400 px-2 py-1 rounded text-xs">{currentVideo.game}</span>
           
           <div className="flex items-center space-x-4">
             <div className="flex items-center space-x-1">
               <Eye className="w-3 h-3" />
-              <span>{formatViews(video.views)}</span>
+              <span>{formatViews(currentVideo.views)}</span>
             </div>
             
             <div className="flex items-center space-x-1">
               <Calendar className="w-3 h-3" />
-              <span>{formatDate(video.upload_date)}</span>
+              <span>{formatDate(currentVideo.upload_date)}</span>
             </div>
           </div>
         </div>
