@@ -1,4 +1,3 @@
-
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
@@ -80,10 +79,10 @@ app.use(cors({
   exposedHeaders: ['Content-Range', 'Content-Length', 'Accept-Ranges']
 }));
 
-// More lenient rate limiting with exclusions for your own domain
+// More lenient rate limiting with better proxy handling
 const limiter = rateLimit({
-  windowMs: 5 * 60 * 1000, // 5 minutes instead of 15
-  max: 1000, // Increased from 100 to 1000 requests per window
+  windowMs: 5 * 60 * 1000, // 5 minutes
+  max: 1000, // requests per window
   skip: (request, response) => {
     // Skip rate limiting for your own domain and localhost
     const origin = request.get('origin') || request.get('referer') || '';
@@ -92,6 +91,7 @@ const limiter = rateLimit({
            origin.includes('127.0.0.1') ||
            origin.includes('46.244.96.25');
   },
+  trustProxy: true, // Add this to handle proxy correctly
   message: {
     error: 'Too many requests from this IP, please try again later.',
     retryAfter: '5 minutes'
@@ -343,7 +343,7 @@ app.get('/api/videos/user/:userId', async (req, res) => {
   }
 });
 
-// NEW ENDPOINT: Increment video views
+// FIXED ENDPOINT: Increment video views
 app.post('/api/videos/:videoId/view', async (req, res) => {
   try {
     const videoId = req.params.videoId;
@@ -354,13 +354,13 @@ app.post('/api/videos/:videoId/view', async (req, res) => {
     
     let result;
     if (isHash) {
-      // If it's a hash, update by video_hash
+      // If it's a hash, update by video_hash only
       [result] = await connection.execute(
         'UPDATE videos SET views = COALESCE(views, 0) + 1 WHERE video_hash = ?',
         [videoId]
       );
     } else {
-      // If it's numeric, update by id
+      // If it's numeric, update by id only
       [result] = await connection.execute(
         'UPDATE videos SET views = COALESCE(views, 0) + 1 WHERE id = ?',
         [videoId]
@@ -382,6 +382,7 @@ app.post('/api/videos/:videoId/view', async (req, res) => {
     });
 
   } catch (error) {
+    console.error('View increment error:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to increment view count: ' + error.message
