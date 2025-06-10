@@ -1,3 +1,4 @@
+
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
@@ -142,7 +143,6 @@ app.get('/api/videos/recent', async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Database error:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to fetch recent videos: ' + error.message
@@ -174,14 +174,6 @@ app.post('/api/videos/upload', upload.single('video'), async (req, res) => {
 
     await connection.end();
 
-    console.log('Video uploaded successfully:', {
-      id: result.insertId,
-      title,
-      filename,
-      filePath,
-      hash: videoHash
-    });
-
     res.json({
       success: true,
       message: 'Video uploaded successfully',
@@ -199,7 +191,6 @@ app.post('/api/videos/upload', upload.single('video'), async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Upload error:', error);
     res.status(500).json({
       success: false,
       message: 'Upload failed: ' + error.message
@@ -235,7 +226,6 @@ app.get('/api/videos/hash/:hash', async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Database error:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to fetch video: ' + error.message
@@ -264,15 +254,12 @@ app.patch('/api/videos/:videoId/privacy', async (req, res) => {
       });
     }
 
-    console.log('Video privacy updated:', { videoId, isPrivate });
-
     res.json({
       success: true,
       message: 'Video privacy updated successfully'
     });
 
   } catch (error) {
-    console.error('Privacy update error:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to update privacy: ' + error.message
@@ -315,11 +302,8 @@ app.delete('/api/videos/:videoId', async (req, res) => {
       const fullPath = path.join(__dirname, video.file_path);
       if (fs.existsSync(fullPath)) {
         fs.unlinkSync(fullPath);
-        console.log('Deleted file:', fullPath);
       }
     }
-
-    console.log('Video deleted successfully:', videoId);
 
     res.json({
       success: true,
@@ -327,7 +311,6 @@ app.delete('/api/videos/:videoId', async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Delete error:', error);
     res.status(500).json({
       success: false,
       message: 'Delete failed: ' + error.message
@@ -353,7 +336,6 @@ app.get('/api/videos/user/:userId', async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Database error:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to fetch videos: ' + error.message
@@ -388,7 +370,6 @@ app.post('/api/videos/:videoId/view', async (req, res) => {
     });
 
   } catch (error) {
-    console.error('View increment error:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to increment view count: ' + error.message
@@ -402,5 +383,5 @@ app.get('/api/health', (req, res) => {
 });
 
 app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+  // Server start message removed for cleaner logs
 });

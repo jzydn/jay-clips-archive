@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import ReactPlayer from 'react-player';
@@ -60,7 +59,7 @@ const VideoPlayer = () => {
           setVideo(prev => prev ? { ...prev, views: prev.views + 1 } : null);
         }
       } catch (error) {
-        console.error('Error incrementing view count:', error);
+        // Silently handle error
       }
     }
   };
@@ -187,7 +186,6 @@ const VideoPlayer = () => {
         setVideo(data.video);
         setError(null);
       } catch (error) {
-        console.error('Error fetching video:', error);
         setError('Network error. Please check your connection and try again.');
       } finally {
         setIsLoading(false);
