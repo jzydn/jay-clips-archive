@@ -14,7 +14,7 @@ const __dirname = path.dirname(__filename);
 const app = express();
 const PORT = process.env.PORT || 8086;
 
-// Trust proxy for rate limiting (fixes the X-Forwarded-For error)
+// Trust proxy for rate limiting (required when behind a proxy)
 app.set('trust proxy', 1);
 
 // Create MySQL connection
@@ -61,11 +61,12 @@ app.use(helmet({
   crossOriginResourcePolicy: { policy: "cross-origin" }
 }));
 
-// Enhanced CORS configuration - added X-User-Type to allowed headers
+// Enhanced CORS configuration with proper headers
 app.use(cors({
   origin: [
     'http://localhost:5173', 
     'http://localhost:3000', 
+    'http://localhost:8080',
     'http://localhost:8081', 
     'http://46.244.96.25:8081',
     'https://vids.extracted.lol',
@@ -78,10 +79,22 @@ app.use(cors({
   exposedHeaders: ['Content-Range', 'Content-Length', 'Accept-Ranges']
 }));
 
-// Rate limiting
+// More lenient rate limiting with exclusions for your own domain
 const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 100
+  windowMs: 5 * 60 * 1000, // 5 minutes instead of 15
+  max: 1000, // Increased from 100 to 1000 requests per window
+  skip: (request, response) => {
+    // Skip rate limiting for your own domain and localhost
+    const origin = request.get('origin') || request.get('referer') || '';
+    return origin.includes('vids.extracted.lol') || 
+           origin.includes('localhost') || 
+           origin.includes('127.0.0.1') ||
+           origin.includes('46.244.96.25');
+  },
+  message: {
+    error: 'Too many requests from this IP, please try again later.',
+    retryAfter: '5 minutes'
+  }
 });
 app.use(limiter);
 
